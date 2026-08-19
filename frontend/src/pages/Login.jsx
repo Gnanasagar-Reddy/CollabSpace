@@ -2,129 +2,217 @@ import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
+import "../styles/login.css";
 
-
-function Login(){
+function Login() {
 
     const navigate = useNavigate();
 
     const { login } =
         useContext(AuthContext);
 
-
-    const [form,setForm] = useState({
-        email:"",
-        password:""
+    const [form, setForm] = useState({
+        email: "",
+        password: ""
     });
 
-
-    const [message,setMessage] =
+    const [message, setMessage] =
         useState("");
 
+    const [loading, setLoading] =
+        useState(false);
 
-    const handleSubmit = async(e)=>{
+
+    const handleChange = (e) => {
+
+        setForm({
+            ...form,
+            [e.target.name]: e.target.value
+        });
+
+    };
+
+
+    const handleSubmit = async (e) => {
 
         e.preventDefault();
 
+        setMessage("");
+        setLoading(true);
 
-        try{
+        try {
 
             const response =
-            await api.post(
-                "/auth/login",
-                form
-            );
-
-
-            console.log(
-                response.data
-            );
+                await api.post(
+                    "/auth/login",
+                    form
+                );
 
 
             const {
                 user,
-                accessToken
+                accessToken,
+                refreshToken
             } = response.data.data;
 
 
             login(
                 user,
-                accessToken
+                accessToken,
+                refreshToken
             );
 
 
             navigate("/dashboard");
 
 
-        }catch(error){
+        } catch (error) {
 
             console.log(
-                error.response.data
+                error.response?.data
             );
 
 
             setMessage(
-                error.response.data.message
+                error.response?.data?.message ||
+                "Login failed"
             );
+
+        } finally {
+
+            setLoading(false);
 
         }
 
     };
 
 
-    return(
+    return (
 
-        <div>
+        <div className="login-page">
 
-            <h1>
-                Login
-            </h1>
+            <div className="login-card">
 
 
-            <form onSubmit={handleSubmit}>
+                {/* Logo */}
+
+                <div className="login-logo">
+                    C
+                </div>
 
 
-                <input
-                    placeholder="Email"
-                    onChange={(e)=>
-                        setForm({
-                            ...form,
-                            email:e.target.value
-                        })
-                    }
-                />
+                <h1>
+                    Welcome back
+                </h1>
 
 
-                <input
-                    placeholder="Password"
-                    type="password"
-                    onChange={(e)=>
-                        setForm({
-                            ...form,
-                            password:e.target.value
-                        })
-                    }
-                />
+                <p className="login-subtitle">
+                    Sign in to continue to CollabSpace
+                </p>
 
 
-                <button>
-                    Login
-                </button>
+                <form
+                    onSubmit={handleSubmit}
+                    className="login-form"
+                >
 
 
-            </form>
+                    {/* Email */}
+
+                    <div className="form-group">
+
+                        <label>
+                            Email
+                        </label>
+
+                        <input
+                            type="email"
+                            name="email"
+                            placeholder="you@example.com"
+                            value={form.email}
+                            onChange={handleChange}
+                            required
+                        />
+
+                    </div>
 
 
-            <p>
-                {message}
-            </p>
+                    {/* Password */}
 
+                    <div className="form-group">
+
+                        <div className="password-label">
+
+                            <label>
+                                Password
+                            </label>
+
+                        </div>
+
+                        <input
+                            type="password"
+                            name="password"
+                            placeholder="Enter your password"
+                            value={form.password}
+                            onChange={handleChange}
+                            required
+                        />
+
+                    </div>
+
+
+                    {/* Error */}
+
+                    {message && (
+
+                        <div className="login-error">
+                            {message}
+                        </div>
+
+                    )}
+
+
+                    {/* Login button */}
+
+                    <button
+                        type="submit"
+                        className="login-button"
+                        disabled={loading}
+                    >
+
+                        {loading
+                            ? "Signing in..."
+                            : "Sign in"
+                        }
+
+                    </button>
+
+
+                </form>
+
+
+                <p className="login-footer">
+
+                    Don't have an account?
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            navigate("/register")
+                        }
+                    >
+                        Create account
+                    </button>
+
+                </p>
+
+
+            </div>
 
         </div>
 
     );
 
 }
-
 
 export default Login;

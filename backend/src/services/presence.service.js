@@ -1,4 +1,5 @@
 const { redisClient } = require("../config/redis");
+const User = require("../modules/auth/user.model");
 
 
 const addUserToDocument = async(
@@ -31,8 +32,26 @@ const getDocumentUsers = async(
     documentId
 )=>{
 
-    return await redisClient.sMembers(
+    const userIds = await redisClient.sMembers(
         `document:${documentId}:presence`
+    );
+
+
+    const users = await User.find({
+        _id: {
+            $in: userIds
+        }
+    }).select(
+        "_id name email"
+    );
+
+
+    return users.map(
+        (user)=>({
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email
+        })
     );
 
 };

@@ -10,27 +10,44 @@ export const AuthProvider = ({ children }) => {
     );
 
 
-    const login = (userData, token) => {
+    const login = (
+        userData,
+        accessToken,
+        refreshToken
+    ) => {
 
         localStorage.setItem(
             "accessToken",
-            token
+            accessToken
         );
+
+
+        localStorage.setItem(
+            "refreshToken",
+            refreshToken
+        );
+
 
         setUser(userData);
 
     };
 
 
-    const logout = () => {
+const logout = () => {
 
-        localStorage.removeItem(
-            "accessToken"
-        );
+    localStorage.removeItem(
+        "accessToken"
+    );
 
-        setUser(null);
 
-    };
+    localStorage.removeItem(
+        "refreshToken"
+    );
+
+
+    setUser(null);
+
+};
 
 
     return (

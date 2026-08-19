@@ -34,9 +34,9 @@ const getUserDocuments = async (userId) => {
         ]
 
     })
-    .sort({
-        updatedAt: -1
-    });
+        .sort({
+            updatedAt: -1
+        });
 
 
     return documents;
@@ -48,6 +48,7 @@ const getDocumentById = async (documentId, userId) => {
     const document = await Document.findById(
         documentId
     );
+
     if (!document) {
 
         throw new ApiError(
@@ -56,18 +57,17 @@ const getDocumentById = async (documentId, userId) => {
         );
 
     }
-
-
     const isOwner =
-        document.owner.toString() === userId.toString();
+        document.owner.toString() ===
+        userId.toString();
 
 
     const isCollaborator =
         document.collaborators.some(
             (collaborator) =>
-                collaborator.user.toString() === userId.toString()
+                collaborator.user._id.toString() ===
+                userId.toString()
         );
-
 
     if (!isOwner && !isCollaborator) {
 
@@ -79,7 +79,31 @@ const getDocumentById = async (documentId, userId) => {
     }
 
 
-    return document;
+    let role;
+
+
+    if (isOwner) {
+
+        role = "owner";
+
+    } else {
+
+        const collaborator =
+            document.collaborators.find(
+                (item) =>
+                    item.user._id.toString() ===
+                    userId.toString()
+            );
+
+        role = collaborator.role;
+
+    }
+
+
+    return {
+        document,
+        role
+    };
 
 };
 
@@ -333,7 +357,7 @@ const updateCollaboratorRole = async (
     }
 
 
-    if (!["viewer","editor"].includes(role)) {
+    if (!["viewer", "editor"].includes(role)) {
 
         throw new ApiError(
             400,
@@ -381,7 +405,6 @@ const removeCollaborator = async (
         documentId
     );
 
-
     if (!document) {
 
         throw new ApiError(
@@ -391,10 +414,9 @@ const removeCollaborator = async (
 
     }
 
-
     const isOwner =
-        document.owner.toString() === ownerId.toString();
-
+        document.owner.toString() ===
+        ownerId.toString();
 
     if (!isOwner) {
 
@@ -405,6 +427,21 @@ const removeCollaborator = async (
 
     }
 
+    const collaborator =
+        document.collaborators.find(
+            (item) =>
+                item.user.toString() ===
+                collaboratorId.toString()
+        );
+
+    if (!collaborator) {
+
+        throw new ApiError(
+            404,
+            "Collaborator not found"
+        );
+
+    }
 
     document.collaborators =
         document.collaborators.filter(
@@ -413,12 +450,9 @@ const removeCollaborator = async (
                 collaboratorId.toString()
         );
 
-
     await document.save();
 
-
     return document;
-
 };
 
 
