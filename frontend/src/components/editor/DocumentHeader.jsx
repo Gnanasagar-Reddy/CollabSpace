@@ -1,61 +1,172 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+
 
 function DocumentHeader({
     title,
-    role
+    role,
+
+    editingTitle,
+    newTitle,
+    setNewTitle,
+
+    startRename,
+    renameDocument,
+    cancelRename,
+    renameMessage,
+
+    deleteDocument,
+    deleting
 }) {
 
-    const navigate = useNavigate();
+    useEffect(() => {
+
+        if (!editingTitle) {
+            return;
+        }
+
+        const handleKeyDown = (e) => {
+
+            if (e.key === "Escape") {
+                cancelRename();
+            }
+
+            if (e.key === "Enter") {
+                renameDocument();
+            }
+
+        };
+
+        window.addEventListener(
+            "keydown",
+            handleKeyDown
+        );
+
+        return () => {
+
+            window.removeEventListener(
+                "keydown",
+                handleKeyDown
+            );
+
+        };
+
+    }, [
+        editingTitle,
+        renameDocument,
+        cancelRename
+    ]);
+
 
     return (
 
-        <header className="document-header">
+        <div className="document-header">
 
-            <div className="document-header-left">
+            <div className="document-header-title">
 
-                <button
-                    className="back-button"
-                    onClick={() =>
-                        navigate("/dashboard")
-                    }
-                >
-                    ←
-                </button>
+                {editingTitle ? (
+
+                    <div className="rename-container">
+
+                        <input
+                            type="text"
+                            value={newTitle}
+                            autoFocus
+                            onChange={(e) =>
+                                setNewTitle(
+                                    e.target.value
+                                )
+                            }
+                        />
 
 
-                <div className="document-header-info">
+                        <button
+                            onClick={
+                                renameDocument
+                            }
+                        >
+                            Save
+                        </button>
 
-                    <h1>
-                        {title || "Untitled Document"}
-                    </h1>
+
+                        <button
+                            onClick={
+                                cancelRename
+                            }
+                        >
+                            Cancel
+                        </button>
 
 
-                    <span
-                        className={`role-badge ${role}`}
-                    >
-                        {role}
-                    </span>
+                        {renameMessage && (
 
-                </div>
+                            <span className="rename-error">
+                                {renameMessage}
+                            </span>
+
+                        )}
+
+                    </div>
+
+                ) : (
+
+                    <div className="title-display">
+
+                        <h1>
+                            {title}
+                        </h1>
+
+
+                        {role === "owner" && (
+
+                            <div className="document-owner-actions">
+
+                                <button
+                                    className="rename-button"
+                                    onClick={startRename}
+                                    title="Rename document"
+                                >
+                                    ✏️
+                                </button>
+
+
+                                <button
+                                    className="delete-editor-button"
+                                    onClick={deleteDocument}
+                                    disabled={deleting}
+                                    title="Delete document"
+                                >
+                                    {deleting
+                                        ? "Deleting..."
+                                        : "🗑️"
+                                    }
+                                </button>
+
+                            </div>
+
+                        )}
+
+                    </div>
+
+                )}
 
             </div>
 
 
-            <div className="document-header-right">
+            <div className="document-role">
 
-                <div className="sync-status">
+                <strong>
+                    Your role:
+                </strong>{" "}
 
-                    <span className="sync-dot"></span>
-
-                    Saved
-
-                </div>
+                {role}
 
             </div>
 
-        </header>
+        </div>
 
     );
+
 }
+
 
 export default DocumentHeader;

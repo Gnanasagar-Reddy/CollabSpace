@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate,useParams } from "react-router-dom";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 
@@ -44,12 +44,30 @@ function Editor() {
         useState([]);
 
 
+    const [editingTitle, setEditingTitle] =
+        useState(false);
+
+
+    const [newTitle, setNewTitle] =
+        useState("");
+
+
+    const [deleting, setDeleting] =
+        useState(false);
+
+    const [renameMessage, setRenameMessage] =
+        useState("");
+
+
     const isReceivingUpdate =
         useRef(false);
 
+    const navigate = useNavigate();
 
     /*
-     * Tiptap editor
+     * =========================
+     * TIPTAP EDITOR
+     * =========================
      */
 
     const editor = useEditor({
@@ -68,21 +86,12 @@ function Editor() {
 
         onUpdate: ({ editor }) => {
 
-            /*
-             * Do not send changes received
-             * from another user.
-             */
-
             if (
                 isReceivingUpdate.current
             ) {
                 return;
             }
 
-
-            /*
-             * Viewer cannot edit.
-             */
 
             if (
                 userRole === "viewer"
@@ -139,11 +148,6 @@ function Editor() {
         };
 
 
-        /*
-         * Receive document changes
-         * from other users.
-         */
-
         const handleDocumentUpdate = (
             data
         ) => {
@@ -174,10 +178,6 @@ function Editor() {
 
         };
 
-
-        /*
-         * Presence update
-         */
 
         const handlePresenceUpdate = (
             data
@@ -213,10 +213,6 @@ function Editor() {
             handlePresenceUpdate
         );
 
-
-        /*
-         * Cleanup
-         */
 
         return () => {
 
@@ -275,15 +271,6 @@ function Editor() {
                     response.data.data;
 
 
-                /*
-                 * Backend returns:
-                 *
-                 * {
-                 *     document,
-                 *     role
-                 * }
-                 */
-
                 setDocument(
                     data.document
                 );
@@ -293,13 +280,6 @@ function Editor() {
                     data.role
                 );
 
-
-                /*
-                 * Load initial content.
-                 *
-                 * Prevent this from being
-                 * treated as a local edit.
-                 */
 
                 isReceivingUpdate.current =
                     true;
@@ -313,6 +293,7 @@ function Editor() {
 
                 isReceivingUpdate.current =
                     false;
+
 
             } catch (error) {
 
@@ -336,7 +317,7 @@ function Editor() {
 
     /*
      * =========================
-     * UPDATE EDITOR PERMISSION
+     * EDITOR PERMISSION
      * =========================
      */
 
@@ -362,6 +343,115 @@ function Editor() {
 
     /*
      * =========================
+     * RENAME DOCUMENT
+     * =========================
+     */
+
+    const renameDocument = async () => {
+
+        const title =
+            newTitle.trim();
+
+
+        if (!title) {
+
+            setRenameMessage(
+                "Document name cannot be empty"
+            );
+
+            return;
+
+        }
+
+
+        if (title === document.title) {
+
+            setEditingTitle(false);
+
+            return;
+
+        }
+
+
+        try {
+
+            const response =
+                await api.put(
+                    `/documents/${documentId}`,
+                    {
+                        title
+                    }
+                );
+
+
+            setDocument(
+                response.data.data
+            );
+
+
+            setEditingTitle(false);
+
+            setNewTitle("");
+
+            setRenameMessage("");
+
+
+        } catch (error) {
+
+            console.log(
+                error.response?.data ||
+                error
+            );
+
+
+            setRenameMessage(
+                error.response?.data?.message ||
+                "Failed to rename document"
+            );
+
+        }
+
+    };
+
+
+    /*
+     * =========================
+     * START RENAMING
+     * =========================
+     */
+
+    const startRename = () => {
+
+        setNewTitle(
+            document.title
+        );
+
+        setRenameMessage("");
+
+        setEditingTitle(true);
+
+    };
+
+
+    /*
+     * =========================
+     * CANCEL RENAMING
+     * =========================
+     */
+
+    const cancelRename = () => {
+
+        setEditingTitle(false);
+
+        setNewTitle("");
+
+        setRenameMessage("");
+
+    };
+
+
+    /*
+     * =========================
      * LOADING
      * =========================
      */
@@ -380,6 +470,52 @@ function Editor() {
 
     }
 
+    const deleteDocument = async () => {
+
+        const confirmed =
+            window.confirm(
+                "Are you sure you want to delete this document?"
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+
+        try {
+
+            setDeleting(true);
+
+
+            await api.delete(
+                `/documents/${documentId}`
+            );
+
+
+            navigate("/dashboard");
+
+
+        } catch (error) {
+
+            console.log(
+                error.response?.data ||
+                error
+            );
+
+            alert(
+                error.response?.data?.message ||
+                "Failed to delete document"
+            );
+
+
+        } finally {
+
+            setDeleting(false);
+
+        }
+
+    };
+
 
     /*
      * =========================
@@ -393,17 +529,24 @@ function Editor() {
 
 
             {/* =====================
-                HEADER
+                DOCUMENT HEADER
             ====================== */}
 
             <DocumentHeader
-                title={
-                    document.title
-                }
+                title={document.title}
+                role={userRole}
 
-                role={
-                    userRole
-                }
+                editingTitle={editingTitle}
+                newTitle={newTitle}
+                setNewTitle={setNewTitle}
+
+                startRename={startRename}
+                renameDocument={renameDocument}
+                cancelRename={cancelRename}
+                renameMessage={renameMessage}
+
+                deleteDocument={deleteDocument}
+                deleting={deleting}
             />
 
 
@@ -445,7 +588,7 @@ function Editor() {
 
 
             {/* =====================
-                DOCUMENT
+                DOCUMENT CONTENT
             ====================== */}
 
             <EditorContentArea
