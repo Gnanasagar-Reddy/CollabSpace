@@ -1,18 +1,21 @@
-import { useEffect, useState } from "react";
-import api from "../services/api";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/dashboard.css";
-
+import api from "../services/api";
+import useDashboard from "../hooks/useDashboard";
+import DashboardHeader from "../components/dashboard/DashboardHeader";
+import DocumentGrid from "../components/dashboard/DocumentGrid";
+import EmptyDocuments from "../components/dashboard/EmptyDocuments";
+import CreateDocumentModal from "../components/dashboard/CreateDocumentModal";
 
 function Dashboard() {
-
     const navigate = useNavigate();
 
-    const [documents, setDocuments] =
-        useState([]);
-
-    const [loading, setLoading] =
-        useState(true);
+    const {
+        documents,
+        loading,
+        deletingId,
+        deleteDocument
+    } = useDashboard();
 
     const [showCreate, setShowCreate] =
         useState(false);
@@ -23,393 +26,119 @@ function Dashboard() {
     const [creating, setCreating] =
         useState(false);
 
-    const [deletingId, setDeletingId] =
-        useState(null);
-
-
-    const fetchDocuments = async () => {
-
-        try {
-
-            const response =
-                await api.get("/documents");
-
-            setDocuments(
-                response.data.data
-            );
-
-        } catch (error) {
-
-            console.log(
-                error.response?.data
-            );
-
-        } finally {
-
-            setLoading(false);
-
-        }
-
-    };
-
-
     const createDocument = async () => {
-
-        if (!title.trim()) {
+        if (!title.trim() || creating) {
             return;
         }
 
         try {
-
             setCreating(true);
 
-            const response =
-                await api.post(
-                    "/documents",
-                    {
-                        title: title.trim(),
-                        content: ""
-                    }
-                );
+            const response = await api.post(
+                "/documents",
+                {
+                    title: title.trim(),
+                    content: ""
+                }
+            );
 
             const documentId =
                 response.data.data._id;
 
-
             setTitle("");
             setShowCreate(false);
-
 
             navigate(
                 `/document/${documentId}`
             );
-
-
         } catch (error) {
-
             console.log(
                 error.response?.data
             );
-
         } finally {
-
             setCreating(false);
-
         }
-
     };
 
-
-    const deleteDocument = async (documentId) => {
-
-        const confirmed =
-            window.confirm(
-                "Are you sure you want to delete this document?"
-            );
-
-        if (!confirmed) {
-            return;
-        }
-
-
-        try {
-
-            setDeletingId(documentId);
-
-            await api.delete(
-                `/documents/${documentId}`
-            );
-
-
-            setDocuments(
-                (prev) =>
-                    prev.filter(
-                        (doc) =>
-                            doc._id !== documentId
-                    )
-            );
-
-
-        } catch (error) {
-
-            console.log(
-                error.response?.data
-            );
-
-        } finally {
-
-            setDeletingId(null);
-
-        }
-
+    const openDocument = (documentId) => {
+        navigate(
+            `/document/${documentId}`
+        );
     };
 
-    useEffect(() => {
-
-        fetchDocuments();
-
-    }, []);
-
+    const logout = () => {
+        localStorage.removeItem("accessToken");
+        navigate("/login");
+    };
 
     if (loading) {
-
         return (
-            <div className="dashboard-loading">
-                Loading...
+            <div className="flex min-h-screen items-center justify-center bg-gray-50">
+                <p className="text-sm text-gray-500">
+                    Loading documents...
+                </p>
             </div>
         );
-
     }
 
-
     return (
+        <div className="min-h-screen bg-gray-50">
+            <DashboardHeader
+                onCreate={() =>
+                    setShowCreate(true)
+                }
+                onLogout={logout}
+            />
 
-        <div className="dashboard">
-
-            {/* HEADER */}
-
-            <header className="dashboard-header">
-
-                <div className="dashboard-logo">
-
-                    <div className="dashboard-logo-icon">
-                        C
-                    </div>
-
-                    <span>
-                        CollabSpace
-                    </span>
-
-                </div>
-
-
-                <button
-                    className="new-document-btn"
-                    onClick={() =>
-                        setShowCreate(true)
-                    }
-                >
-                    + New Document
-                </button>
-
-            </header>
-
-
-            {/* MAIN */}
-
-            <main className="dashboard-main">
-
-                <section className="dashboard-title-section">
-
-                    <h1 className="dashboard-title">
+            <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+                <section className="mb-8 sm:mb-10">
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
                         My Documents
                     </h1>
 
-                    <p className="dashboard-subtitle">
-                        Create, manage and collaborate
-                        on your documents.
+                    <p className="mt-2 text-sm text-gray-500 sm:text-base">
+                        Create, manage and
+                        collaborate on your
+                        documents.
                     </p>
-
                 </section>
 
-
-                {/* DOCUMENTS */}
-
                 {documents.length === 0 ? (
-
-                    <div className="empty-documents">
-
-                        <h3>
-                            No documents yet
-                        </h3>
-
-                        <p>
-                            Create your first document
-                            to get started.
-                        </p>
-
-                    </div>
-
-                ) : (
-
-                    <div className="document-grid">
-
-                        {documents.map(
-                            (doc) => (
-
-                                <div
-                                    className="document-card"
-                                    key={doc._id}
-                                >
-
-                                    <div>
-
-                                        <div className="document-icon">
-                                            📄
-                                        </div>
-
-
-                                        <div className="document-info">
-
-                                            <h3 className="document-title">
-                                                {doc.title}
-                                            </h3>
-
-                                            <p className="document-date">
-                                                Last edited{" "}
-                                                {new Date(
-                                                    doc.updatedAt
-                                                ).toLocaleDateString(
-                                                    "en-US",
-                                                    {
-                                                        month: "short",
-                                                        day: "numeric",
-                                                        year: "numeric"
-                                                    }
-                                                )}
-                                            </p>
-
-                                        </div>
-
-                                    </div>
-
-
-                                    <div className="document-card-actions">
-
-                                        <button
-                                            className="open-document-btn"
-                                            onClick={() =>
-                                                navigate(
-                                                    `/document/${doc._id}`
-                                                )
-                                            }
-                                        >
-                                            Open →
-                                        </button>
-
-
-                                        <button
-                                            className="delete-document-btn"
-                                            disabled={
-                                                deletingId === doc._id
-                                            }
-                                            onClick={() =>
-                                                deleteDocument(
-                                                    doc._id
-                                                )
-                                            }
-                                        >
-
-                                            {deletingId === doc._id
-                                                ? "Deleting..."
-                                                : "Delete"
-                                            }
-
-                                        </button>
-
-                                    </div>
-
-                                </div>
-
-                            )
-                        )}
-
-                    </div>
-
-                )}
-
-            </main>
-            {showCreate && (
-
-                <div
-                    className="modal-overlay"
-                    onClick={() =>
-                        setShowCreate(false)
-                    }
-                >
-
-                    <div
-                        className="create-modal"
-                        onClick={(e) =>
-                            e.stopPropagation()
+                    <EmptyDocuments
+                        onCreate={() =>
+                            setShowCreate(true)
                         }
-                    >
+                    />
+                ) : (
+                    <DocumentGrid
+                        documents={documents}
+                        onOpen={openDocument}
+                        onDelete={
+                            deleteDocument
+                        }
+                        deletingId={
+                            deletingId
+                        }
+                    />
+                )}
+            </main>
 
-                        <h2>
-                            Create Document
-                        </h2>
-
-                        <p>
-                            Give your document a name.
-                        </p>
-
-
-                        <input
-                            type="text"
-                            placeholder="Document name"
-                            value={title}
-                            autoFocus
-                            onChange={(e) =>
-                                setTitle(
-                                    e.target.value
-                                )
-                            }
-                            onKeyDown={(e) => {
-
-                                if (
-                                    e.key === "Enter"
-                                ) {
-                                    createDocument();
-                                }
-
-                                if (
-                                    e.key === "Escape"
-                                ) {
-                                    setShowCreate(false);
-                                }
-
-                            }}
-                        />
-
-
-                        <div className="modal-actions">
-
-                            <button
-                                onClick={() =>
-                                    setShowCreate(false)
-                                }
-                            >
-                                Cancel
-                            </button>
-
-
-                            <button
-                                onClick={createDocument}
-                                disabled={
-                                    !title.trim() ||
-                                    creating
-                                }
-                            >
-
-                                {creating
-                                    ? "Creating..."
-                                    : "Create"
-                                }
-
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
+            {showCreate && (
+                <CreateDocumentModal
+                    title={title}
+                    setTitle={setTitle}
+                    onCreate={createDocument}
+                    onClose={() => {
+                        if (!creating) {
+                            setShowCreate(false);
+                            setTitle("");
+                        }
+                    }}
+                    creating={creating}
+                />
             )}
         </div>
-
     );
-
 }
-
 
 export default Dashboard;

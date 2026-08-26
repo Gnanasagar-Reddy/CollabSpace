@@ -1,53 +1,72 @@
-function DocumentCard({ document, onOpen }) {
-
-    const formattedDate =
-        new Date(document.updatedAt)
-            .toLocaleDateString(
-                "en-US",
-                {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric"
-                }
-            );
-
-    return (
-        <div
-            className="document-card"
-            onClick={() => onOpen(document._id)}
-        >
-
-            <div className="document-card-icon">
-                📄
-            </div>
-
-
-            <div className="document-card-body">
-
-                <h3>
-                    {document.title || "Untitled Document"}
-                </h3>
-
-                <p>
-                    Last edited {formattedDate}
-                </p>
-
-            </div>
-
-
-            <button
-                className="open-document-btn"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onOpen(document._id);
-                }}
-            >
-                Open
-            </button>
-
-        </div>
+function DocumentCard({
+    document,
+    onOpen,
+    onDelete,
+    deleting
+}) {
+    const formattedDate = new Date(
+        document.updatedAt
+    ).toLocaleDateString(
+        "en-US",
+        {
+            month: "short",
+            day: "numeric",
+            year: "numeric"
+        }
     );
 
+    return (
+        <article className="group flex min-h-[210px] flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xl">
+                    📄
+                </div>
+
+                <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={() =>
+                        onDelete(document._id)
+                    }
+                    className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-500 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    {deleting
+                        ? "Deleting..."
+                        : "Delete"}
+                </button>
+            </div>
+
+            <div className="mt-5 min-w-0 flex-1">
+                <h3
+                    title={
+                        document.title ||
+                        "Untitled Document"
+                    }
+                    className="truncate text-base font-semibold text-gray-900 sm:text-lg"
+                >
+                    {document.title ||
+                        "Untitled Document"}
+                </h3>
+
+                <p className="mt-2 text-sm text-gray-400">
+                    Last edited {formattedDate}
+                </p>
+            </div>
+
+            <button
+                type="button"
+                onClick={() =>
+                    onOpen(document._id)
+                }
+                className="mt-5 flex w-fit items-center gap-1 text-sm font-semibold text-indigo-600 transition hover:text-indigo-700"
+            >
+                Open
+                <span className="transition-transform group-hover:translate-x-1">
+                    →
+                </span>
+            </button>
+        </article>
+    );
 }
 
 export default DocumentCard;

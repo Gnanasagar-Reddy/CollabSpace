@@ -1,25 +1,20 @@
-import {
-    EditorContent
-} from "@tiptap/react";
+import { EditorContent } from "@tiptap/react";
 
 function EditorContentArea({
-    editor
+    editor,
+    userRole
 }) {
-
     return (
-
-        <main className="editor-workspace">
-
-            <div className="document-page">
-
-                <EditorContent
-                    editor={editor}
-                />
-
-            </div>
-
-        </main>
-
+        <div className="min-h-[650px] bg-white px-6 py-8 sm:px-10 sm:py-10 lg:px-14 lg:py-12">
+            <EditorContent
+                editor={editor}
+                className={
+                    userRole === "viewer"
+                        ? "pointer-events-none"
+                        : ""
+                }
+            />
+        </div>
     );
 }
 

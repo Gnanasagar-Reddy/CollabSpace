@@ -1,22 +1,18 @@
 function EditorToolbar({ editor }) {
-
     if (!editor) {
         return null;
     }
 
-
-    const buttonClass = (active) => (
-        `toolbar-btn ${active ? "active" : ""}`
-    );
-
+    const buttonClass = (active) => {
+        return `flex h-9 items-center justify-center rounded-lg px-2.5 text-sm font-medium transition ${
+            active
+                ? "bg-indigo-100 text-indigo-700"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        }`;
+    };
 
     return (
-
-        <div className="editor-toolbar">
-
-
-            {/* Bold */}
-
+        <div className="flex flex-wrap items-center gap-1 border-b border-gray-200 bg-white px-3 py-2">
             <button
                 type="button"
                 className={buttonClass(
@@ -33,9 +29,6 @@ function EditorToolbar({ editor }) {
             >
                 <strong>B</strong>
             </button>
-
-
-            {/* Italic */}
 
             <button
                 type="button"
@@ -54,9 +47,6 @@ function EditorToolbar({ editor }) {
                 <em>I</em>
             </button>
 
-
-            {/* Strike */}
-
             <button
                 type="button"
                 className={buttonClass(
@@ -74,16 +64,14 @@ function EditorToolbar({ editor }) {
                 <s>S</s>
             </button>
 
-
-            <div className="toolbar-divider" />
-
-
-            {/* Bullet List */}
+            <div className="mx-1 h-6 w-px bg-gray-200" />
 
             <button
                 type="button"
                 className={buttonClass(
-                    editor.isActive("bulletList")
+                    editor.isActive(
+                        "bulletList"
+                    )
                 )}
                 onClick={() =>
                     editor
@@ -92,18 +80,16 @@ function EditorToolbar({ editor }) {
                         .toggleBulletList()
                         .run()
                 }
-                title="Bullet List"
             >
                 • List
             </button>
 
-
-            {/* Ordered List */}
-
             <button
                 type="button"
                 className={buttonClass(
-                    editor.isActive("orderedList")
+                    editor.isActive(
+                        "orderedList"
+                    )
                 )}
                 onClick={() =>
                     editor
@@ -112,20 +98,15 @@ function EditorToolbar({ editor }) {
                         .toggleOrderedList()
                         .run()
                 }
-                title="Numbered List"
             >
                 1. List
             </button>
 
-
-            <div className="toolbar-divider" />
-
-
-            {/* Undo */}
+            <div className="mx-1 h-6 w-px bg-gray-200" />
 
             <button
                 type="button"
-                className="toolbar-icon-btn"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-lg text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30"
                 onClick={() =>
                     editor
                         .chain()
@@ -145,12 +126,9 @@ function EditorToolbar({ editor }) {
                 ↶
             </button>
 
-
-            {/* Redo */}
-
             <button
                 type="button"
-                className="toolbar-icon-btn"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-lg text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30"
                 onClick={() =>
                     editor
                         .chain()
@@ -169,12 +147,8 @@ function EditorToolbar({ editor }) {
             >
                 ↷
             </button>
-
         </div>
-
     );
-
 }
-
 
 export default EditorToolbar;

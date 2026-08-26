@@ -3,10 +3,9 @@ import api from "../../services/api";
 
 function CollaboratorList({
     documentId,
-    collaborators,
+    collaborators = [],
     onUpdate
 }) {
-
     const [message, setMessage] =
         useState("");
 
@@ -14,190 +13,184 @@ function CollaboratorList({
         collaboratorId,
         role
     ) => {
-
         try {
-
-            const response =
-                await api.patch(
-                    `/documents/${documentId}/collaborators/${collaboratorId}`,
-                    {
-                        role
-                    }
-                );
-
-            console.log(
-                response.data
+            await api.patch(
+                `/documents/${documentId}/collaborators/${collaboratorId}`,
+                {
+                    role
+                }
             );
 
             setMessage(
                 "Role updated successfully"
             );
 
-            if (onUpdate) {
-                onUpdate();
-            }
-
+            onUpdate?.();
         } catch (error) {
-
-            console.log(
-                error.response?.data
-            );
-
             setMessage(
                 error.response?.data?.message ||
                 "Failed to update role"
             );
-
         }
     };
-
 
     const removeCollaborator = async (
         collaboratorId
     ) => {
-
         try {
-
-            const response =
-                await api.delete(
-                    `/documents/${documentId}/collaborators/${collaboratorId}`
-                );
-
-            console.log(
-                response.data
+            await api.delete(
+                `/documents/${documentId}/collaborators/${collaboratorId}`
             );
 
             setMessage(
                 "Collaborator removed"
             );
 
-            if (onUpdate) {
-                onUpdate();
-            }
-
+            onUpdate?.();
         } catch (error) {
-
-            console.log(
-                error.response?.data
-            );
-
             setMessage(
                 error.response?.data?.message ||
                 "Failed to remove collaborator"
             );
-
         }
     };
-
-
-    if (
-        !collaborators ||
-        collaborators.length === 0
-    ) {
-
-        return (
-            <div>
-
-                <h3>
-                    Collaborators
-                </h3>
-
-                <p>
-                    No collaborators yet.
-                </p>
-
-            </div>
-        );
-
-    }
-
-
+    
     return (
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-lg">
+                        👥
+                    </div>
 
-        <div>
+                    <div>
+                        <h2 className="text-base font-semibold text-gray-900">
+                            Collaborators
+                        </h2>
 
-            <h3>
-                Collaborators
-            </h3>
+                        <p className="mt-0.5 text-xs text-gray-500">
+                            Manage document access
+                        </p>
+                    </div>
+                </div>
 
+                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+                    {collaborators.length}
+                </span>
+            </div>
 
-            {
-                collaborators.map(
-                    (collaborator) => {
+            {collaborators.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-gray-300 px-4 py-8 text-center">
+                    <p className="text-sm font-medium text-gray-600">
+                        No collaborators yet
+                    </p>
 
-                        const user =
-                            collaborator.user;
+                    <p className="mt-1 text-xs text-gray-400">
+                        Share this document to
+                        invite someone.
+                    </p>
+                </div>
+            ) : (
+                <div className="space-y-2">
+                    {collaborators.map(
+                        (collaborator) => {
+                            const user =
+                                collaborator.user ||
+                                collaborator;
 
-                        return (
+                            const userId =
+                                user._id ||
+                                collaborator._id;
 
-                            <div
-                                key={user._id}
-                            >
+                            const name =
+                                user.name ||
+                                user.username ||
+                                user.email ||
+                                "Collaborator";
 
-                                <div>
+                            const email =
+                                user.email || "";
 
-                                    <strong>
-                                        {user.name}
-                                    </strong>
+                            const initial =
+                                name
+                                    .charAt(0)
+                                    .toUpperCase();
 
-                                    <div>
-                                        {user.email}
+                            return (
+                                <div
+                                    key={userId}
+                                    className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3 sm:flex-row sm:items-center"
+                                >
+                                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
+                                            {initial}
+                                        </div>
+
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-semibold text-gray-900">
+                                                {name}
+                                            </p>
+
+                                            {email && (
+                                                <p className="truncate text-xs text-gray-500">
+                                                    {email}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
 
+                                    <div className="flex items-center gap-2">
+                                        <select
+                                            value={
+                                                collaborator.role ||
+                                                "editor"
+                                            }
+                                            onChange={(
+                                                event
+                                            ) =>
+                                                updateRole(
+                                                    userId,
+                                                    event
+                                                        .target
+                                                        .value
+                                                )
+                                            }
+                                            className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-xs font-medium text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-50"
+                                        >
+                                            <option value="editor">
+                                                Editor
+                                            </option>
+
+                                            <option value="viewer">
+                                                Viewer
+                                            </option>
+                                        </select>
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                removeCollaborator(
+                                                    userId
+                                                )
+                                            }
+                                            className="h-9 rounded-lg px-3 text-xs font-semibold text-red-500 transition hover:bg-red-50 hover:text-red-600"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
                                 </div>
+                            );
+                        }
+                    )}
+                </div>
+            )}
 
-
-                                <select
-                                    value={
-                                        collaborator.role
-                                    }
-                                    onChange={(e) =>
-                                        updateRole(
-                                            user._id,
-                                            e.target.value
-                                        )
-                                    }
-                                >
-
-                                    <option value="editor">
-                                        Editor
-                                    </option>
-
-                                    <option value="viewer">
-                                        Viewer
-                                    </option>
-
-                                </select>
-
-
-                                <button
-                                    onClick={() =>
-                                        removeCollaborator(
-                                            user._id
-                                        )
-                                    }
-                                >
-                                    Remove
-                                </button>
-
-                            </div>
-
-                        );
-
-                    }
-                )
-            }
-
-
-            {
-                message && (
-                    <p>
-                        {message}
-                    </p>
-                )
-            }
-
-        </div>
+            {message && (
+                <p className="mt-4 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                    {message}
+                </p>
+            )}
+        </section>
     );
 }
 

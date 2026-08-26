@@ -7,10 +7,10 @@ const createDocument = async (req, res, next) => {
     try {
 
         const document =
-        await documentService.createDocument(
-            req.user._id,
-            req.body
-        );
+            await documentService.createDocument(
+                req.user._id,
+                req.body
+            );
 
 
         sendResponse(
@@ -21,7 +21,7 @@ const createDocument = async (req, res, next) => {
         );
 
 
-    } catch(error) {
+    } catch (error) {
 
         next(error);
 
@@ -29,14 +29,14 @@ const createDocument = async (req, res, next) => {
 
 };
 
-const getUserDocuments = async (req,res,next)=>{
+const getUserDocuments = async (req, res, next) => {
 
-    try{
+    try {
 
         const documents =
-        await documentService.getUserDocuments(
-            req.user._id
-        );
+            await documentService.getUserDocuments(
+                req.user._id
+            );
 
 
         sendResponse(
@@ -48,7 +48,7 @@ const getUserDocuments = async (req,res,next)=>{
 
 
     }
-    catch(error){
+    catch (error) {
 
         next(error);
 
@@ -56,15 +56,15 @@ const getUserDocuments = async (req,res,next)=>{
 
 };
 
-const getDocumentById = async (req,res,next)=>{
+const getDocumentById = async (req, res, next) => {
 
-    try{
+    try {
 
         const document =
-        await documentService.getDocumentById(
-            req.params.id,
-            req.user._id
-        );
+            await documentService.getDocumentById(
+                req.params.id,
+                req.user._id
+            );
 
 
         sendResponse(
@@ -76,7 +76,7 @@ const getDocumentById = async (req,res,next)=>{
 
 
     }
-    catch(error){
+    catch (error) {
 
         next(error);
 
@@ -93,15 +93,15 @@ const updateDocument = async (
     try {
 
         const document =
-        await documentService.updateDocument(
+            await documentService.updateDocument(
 
-            req.params.id,
+                req.params.id,
 
-            req.user._id,
+                req.user._id,
 
-            req.body
+                req.body
 
-        );
+            );
 
 
         sendResponse(
@@ -113,7 +113,7 @@ const updateDocument = async (
 
 
     }
-    catch(error){
+    catch (error) {
 
         next(error);
 
@@ -143,7 +143,7 @@ const deleteDocument = async (
         );
 
     }
-    catch(error) {
+    catch (error) {
 
         next(error);
 
@@ -166,12 +166,12 @@ const shareDocument = async (
 
 
         const document =
-        await documentService.shareDocument(
-            req.params.id,
-            req.user._id,
-            email,
-            role
-        );
+            await documentService.shareDocument(
+                req.params.id,
+                req.user._id,
+                email,
+                role
+            );
 
 
         sendResponse(
@@ -182,7 +182,7 @@ const shareDocument = async (
         );
 
     }
-    catch(error) {
+    catch (error) {
 
         next(error);
 
@@ -199,17 +199,17 @@ const updateCollaboratorRole = async (
     try {
 
         const document =
-        await documentService.updateCollaboratorRole(
+            await documentService.updateCollaboratorRole(
 
-            req.params.id,
+                req.params.id,
 
-            req.user._id,
+                req.user._id,
 
-            req.params.userId,
+                req.params.userId,
 
-            req.body.role
+                req.body.role
 
-        );
+            );
 
 
         sendResponse(
@@ -221,7 +221,7 @@ const updateCollaboratorRole = async (
 
 
     }
-    catch(error){
+    catch (error) {
 
         next(error);
 
@@ -238,15 +238,15 @@ const removeCollaborator = async (
     try {
 
         const document =
-        await documentService.removeCollaborator(
+            await documentService.removeCollaborator(
 
-            req.params.id,
+                req.params.id,
 
-            req.user._id,
+                req.user._id,
 
-            req.params.userId
+                req.params.userId
 
-        );
+            );
 
 
         sendResponse(
@@ -258,12 +258,57 @@ const removeCollaborator = async (
 
 
     }
-    catch(error){
+    catch (error) {
 
         next(error);
 
     }
 
+};
+
+const saveDocument = async (
+    req,
+    res,
+    next
+) => {
+    try {
+        const result =
+            await documentService.saveDocumentNow(
+                req.params.documentId,
+                req.user._id
+            );
+
+        return res.status(200).json({
+            success: true,
+            message:
+                result.message
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const discardDocumentDraft = async (
+    req,
+    res,
+    next
+) => {
+    try {
+        const result =
+            await documentService
+                .discardDocumentDraft(
+                    req.params.documentId,
+                    req.user._id
+                );
+
+        res.status(200).json({
+            success: true,
+            message:
+                result.message
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
 module.exports = {
@@ -274,5 +319,8 @@ module.exports = {
     deleteDocument,
     shareDocument,
     updateCollaboratorRole,
-    removeCollaborator
+    removeCollaborator,
+    saveDocument,
+    discardDocumentDraft
+
 };

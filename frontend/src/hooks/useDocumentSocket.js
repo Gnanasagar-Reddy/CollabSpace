@@ -1,22 +1,18 @@
 import { useEffect, useState } from "react";
 import socket, {
     connectSocket
-} from "../../socket/socket"
-function useDocumentSocket(documentId) {
+} from "../socket/socket";
 
+function useDocumentSocket(documentId) {
     const [onlineUsers, setOnlineUsers] =
         useState([]);
 
     useEffect(() => {
-
         if (!documentId) {
             return;
         }
 
-        connectSocket();
-
         const handleConnect = () => {
-
             console.log(
                 "Socket connected:",
                 socket.id
@@ -26,22 +22,12 @@ function useDocumentSocket(documentId) {
                 "join-document",
                 documentId
             );
-
         };
 
-        const handlePresenceUpdate = (
-            data
-        ) => {
-
-            console.log(
-                "Presence update:",
-                data.users
-            );
-
+        const handlePresenceUpdate = (data) => {
             setOnlineUsers(
-                data.users
+                data.users || []
             );
-
         };
 
         socket.on(
@@ -54,8 +40,13 @@ function useDocumentSocket(documentId) {
             handlePresenceUpdate
         );
 
-        return () => {
+        connectSocket();
 
+        if (socket.connected) {
+            handleConnect();
+        }
+
+        return () => {
             socket.off(
                 "connect",
                 handleConnect
@@ -67,9 +58,7 @@ function useDocumentSocket(documentId) {
             );
 
             socket.disconnect();
-
         };
-
     }, [documentId]);
 
     return {

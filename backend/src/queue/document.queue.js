@@ -35,7 +35,7 @@ const addDocumentSaveJob = async(
             content
         },
         {
-            delay:2000,
+            delay:1000*60*3,
             jobId:documentId,
             removeOnComplete:true,
             removeOnFail:true

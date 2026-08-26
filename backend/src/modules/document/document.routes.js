@@ -13,7 +13,9 @@ const {
     deleteDocument,
     shareDocument,
     updateCollaboratorRole,
-    removeCollaborator
+    removeCollaborator,
+    saveDocument,
+    discardDocumentDraft
 } = require("./document.controller");
 
 router.get(
@@ -62,6 +64,18 @@ router.delete(
     "/:id/collaborators/:userId",
     protect,
     removeCollaborator
+);
+
+router.post(
+    "/:documentId/save",
+    protect,
+    saveDocument
+);
+
+router.delete(
+    "/:documentId/draft",
+    protect,
+    discardDocumentDraft
 );
 
 module.exports = router;
