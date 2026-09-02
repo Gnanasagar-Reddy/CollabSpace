@@ -19,8 +19,17 @@ const {
     getOwnedDocuments,
     getSharedDocuments,
     getDocumentVersions,
-    restoreDocumentVersion
+    restoreDocumentVersion,
+    sendCollaborationRequest,
+    getCollaborationRequests,
+    acceptCollaborationRequest,
+    rejectCollaborationRequest
 } = require("./document.controller");
+
+
+/* =========================
+   BASIC DOCUMENT ROUTES
+   ========================= */
 
 router.get(
     "/",
@@ -35,10 +44,11 @@ router.post(
 );
 
 
-/*
- * Specific routes MUST come
- * before /:id
- */
+/* =========================
+   SPECIFIC ROUTES
+   These MUST come before
+   /:id
+   ========================= */
 
 router.get(
     "/owned",
@@ -53,10 +63,34 @@ router.get(
 );
 
 
-/*
- * Dynamic route comes after
- * specific routes
- */
+/* =========================
+   COLLABORATION REQUESTS
+   These MUST also come before
+   /:id
+   ========================= */
+
+router.get(
+    "/share-requests",
+    protect,
+    getCollaborationRequests
+);
+
+router.patch(
+    "/share-requests/:requestId/accept",
+    protect,
+    acceptCollaborationRequest
+);
+
+router.patch(
+    "/share-requests/:requestId/reject",
+    protect,
+    rejectCollaborationRequest
+);
+
+
+/* =========================
+   VERSION HISTORY
+   ========================= */
 
 router.get(
     "/:documentId/versions",
@@ -70,22 +104,15 @@ router.post(
     restoreDocumentVersion
 );
 
-router.get(
-    "/:id",
-    protect,
-    getDocumentById
-);
 
-router.put(
-    "/:id",
-    protect,
-    updateDocument
-);
+/* =========================
+   DOCUMENT-SPECIFIC ACTIONS
+   ========================= */
 
-router.delete(
-    "/:id",
+router.post(
+    "/:id/share-request",
     protect,
-    deleteDocument
+    sendCollaborationRequest
 );
 
 router.post(
@@ -117,5 +144,30 @@ router.delete(
     protect,
     discardDocumentDraft
 );
+
+
+/* =========================
+   DYNAMIC DOCUMENT ROUTES
+   Keep these LAST
+   ========================= */
+
+router.get(
+    "/:id",
+    protect,
+    getDocumentById
+);
+
+router.put(
+    "/:id",
+    protect,
+    updateDocument
+);
+
+router.delete(
+    "/:id",
+    protect,
+    deleteDocument
+);
+
 
 module.exports = router;

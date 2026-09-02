@@ -1,5 +1,7 @@
 const documentService = require("./document.service");
 const sendResponse = require("../../utils/apiResponse");
+const collaborationRequestService = require("./services/document.collaborationRequest.service");
+
 
 
 const createDocument = async (req, res, next) => {
@@ -395,6 +397,108 @@ const restoreDocumentVersion = async (req, res, next) => {
     }
 };
 
+const sendCollaborationRequest = async (
+    req,
+    res,
+    next
+) => {
+    try {
+        const request =
+            await collaborationRequestService
+                .sendCollaborationRequest(
+                    req.params.id,
+                    req.user._id,
+                    req.body.email,
+                    req.body.role,
+                    req.body.message
+                );
+
+        sendResponse(
+            res,
+            201,
+            request,
+            "Collaboration request sent successfully"
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+const getCollaborationRequests = async (
+    req,
+    res,
+    next
+) => {
+    try {
+        const requests =
+            await collaborationRequestService
+                .getCollaborationRequests(
+                    req.user._id
+                );
+
+        sendResponse(
+            res,
+            200,
+            requests,
+            "Collaboration requests fetched successfully"
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+const acceptCollaborationRequest = async (
+    req,
+    res,
+    next
+) => {
+    try {
+        const document =
+            await collaborationRequestService
+                .acceptCollaborationRequest(
+                    req.params.requestId,
+                    req.user._id
+                );
+
+        sendResponse(
+            res,
+            200,
+            document,
+            "Collaboration request accepted"
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+const rejectCollaborationRequest = async (
+    req,
+    res,
+    next
+) => {
+    try {
+        const request =
+            await collaborationRequestService
+                .rejectCollaborationRequest(
+                    req.params.requestId,
+                    req.user._id
+                );
+
+        sendResponse(
+            res,
+            200,
+            request,
+            "Collaboration request rejected"
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 module.exports = {
     createDocument,
     getUserDocuments,
@@ -409,5 +513,9 @@ module.exports = {
     getOwnedDocuments,
     getSharedDocuments,
     getDocumentVersions,
-    restoreDocumentVersion
+    restoreDocumentVersion,
+    sendCollaborationRequest,
+    getCollaborationRequests,
+    acceptCollaborationRequest,
+    rejectCollaborationRequest
 };
