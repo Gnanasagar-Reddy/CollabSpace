@@ -2,8 +2,8 @@ const express = require("express");
 
 const router = express.Router();
 
-
-const protect = require("../../middleware/auth.middleware");
+const protect =
+    require("../../middleware/auth.middleware");
 
 const {
     createDocument,
@@ -15,7 +15,11 @@ const {
     updateCollaboratorRole,
     removeCollaborator,
     saveDocument,
-    discardDocumentDraft
+    discardDocumentDraft,
+    getOwnedDocuments,
+    getSharedDocuments,
+    getDocumentVersions,
+    restoreDocumentVersion
 } = require("./document.controller");
 
 router.get(
@@ -28,6 +32,42 @@ router.post(
     "/",
     protect,
     createDocument
+);
+
+
+/*
+ * Specific routes MUST come
+ * before /:id
+ */
+
+router.get(
+    "/owned",
+    protect,
+    getOwnedDocuments
+);
+
+router.get(
+    "/shared",
+    protect,
+    getSharedDocuments
+);
+
+
+/*
+ * Dynamic route comes after
+ * specific routes
+ */
+
+router.get(
+    "/:documentId/versions",
+    protect,
+    getDocumentVersions
+);
+
+router.post(
+    "/:documentId/versions/:versionId/restore",
+    protect,
+    restoreDocumentVersion
 );
 
 router.get(

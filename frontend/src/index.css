@@ -1,13 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+body {
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
 
 html,
 body,
 #root {
     min-height: 100%;
-}
-
-body {
-    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .ProseMirror {
@@ -34,4 +41,134 @@ body {
     outline: none !important;
     border: 0 !important;
     box-shadow: none !important;
+}
+
+.tiptap-editor {
+    min-height: 600px;
+    width: 100%;
+    outline: none;
+}
+
+/* Prevent unwanted space before the first line */
+.tiptap-editor > :first-child {
+    margin-top: 0 !important;
+}
+
+.tiptap-editor p {
+    margin: 0.5rem 0;
+}
+
+.tiptap-editor h1 {
+    margin: 1.5rem 0 1rem;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.tiptap-editor h2 {
+    margin: 1.25rem 0 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.tiptap-editor h3 {
+    margin: 1rem 0 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.tiptap-editor ul {
+    padding-left: 1.5rem;
+    list-style: disc;
+}
+
+.tiptap-editor ol {
+    padding-left: 1.5rem;
+    list-style: decimal;
+}
+
+.tiptap-editor blockquote {
+    margin: 1rem 0;
+    border-left: 4px solid #6366f1;
+    padding-left: 1rem;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.tiptap-editor pre {
+    margin: 1rem 0;
+    overflow-x: auto;
+    border-radius: 0.75rem;
+    background: #111827;
+    padding: 1rem;
+    color: #f9fafb;
+}
+
+.tiptap-editor code {
+    border-radius: 0.25rem;
+    background: #f3f4f6;
+    padding: 0.15rem 0.3rem;
+    font-family: monospace;
+}
+
+.tiptap-editor pre code {
+    background: transparent;
+    padding: 0;
+}
+
+.tiptap-editor hr {
+    margin: 1.5rem 0;
+    border: 0;
+    border-top: 1px solid #e5e7eb;
+}
+
+.tiptap-editor a {
+    color: #4f46e5;
+    text-decoration: underline;
+}
+
+.tiptap-editor ul[data-type="taskList"] {
+    padding-left: 0;
+    list-style: none;
+}
+
+.tiptap-editor ul[data-type="taskList"] li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.tiptap-editor ul[data-type="taskList"] li > label {
+    margin-top: 0.25rem;
+}
+
+.tiptap-editor ul[data-type="taskList"] li > div {
+    flex: 1;
+}
+
+.ProseMirror {
+    color: #111827;
+}
+
+.dark .ProseMirror {
+    color: #f3f4f6;
+}
+
+.dark .tiptap-editor code {
+    background: #1f2937;
+    color: #e5e7eb;
+}
+
+.dark .tiptap-editor blockquote {
+    color: #9ca3af;
+}
+
+.dark .tiptap-editor hr {
+    border-top-color: #374151;
+}
+
+.dark .tiptap-editor a {
+    color: #818cf8;
 }

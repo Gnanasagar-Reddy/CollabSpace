@@ -1,8 +1,14 @@
 import { useEffect, useRef } from "react";
-import {
-    useEditor
-} from "@tiptap/react";
+import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
+import Highlight from "@tiptap/extension-highlight";
+import TextAlign from "@tiptap/extension-text-align";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-text-style";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
 import socket from "../../socket/socket";
 import EditorToolbar from "./EditorToolbar";
 import EditorContentArea from "./EditorContentArea";
@@ -20,7 +26,36 @@ function CollaborationEditor({
 
     const editor = useEditor({
         extensions: [
-            StarterKit
+            StarterKit,
+
+            Underline,
+
+            Link.configure({
+                openOnClick: false,
+                autolink: true,
+                defaultProtocol: "https"
+            }),
+
+            Highlight.configure({
+                multicolor: true
+            }),
+
+            TextStyle,
+
+            Color,
+
+            TextAlign.configure({
+                types: [
+                    "heading",
+                    "paragraph"
+                ]
+            }),
+
+            TaskList,
+
+            TaskItem.configure({
+                nested: true
+            })
         ],
 
         content: content || "",
@@ -32,7 +67,7 @@ function CollaborationEditor({
 
         editorProps: {
             attributes: {
-                class: "outline-none border-none shadow-none focus:outline-none focus:border-none focus:ring-0"
+                class: "tiptap-editor"
             }
         },
 
@@ -72,7 +107,10 @@ function CollaborationEditor({
         editor.setEditable(
             userRole !== "viewer"
         );
-    }, [editor, userRole]);
+    }, [
+        editor,
+        userRole
+    ]);
 
     useEffect(() => {
         if (!editor) {
@@ -112,7 +150,10 @@ function CollaborationEditor({
                 handleDocumentUpdate
             );
         };
-    }, [editor, documentId]);
+    }, [
+        editor,
+        documentId
+    ]);
 
     useEffect(() => {
         return () => {
@@ -135,17 +176,20 @@ function CollaborationEditor({
             </div>
         );
     }
-
     return (
-        <div className="overflow-hidden">
-            <EditorToolbar
-                editor={editor}
-            />
+        <div className="overflow-visible">
+
+            <div className="sticky top-16 z-20">
+                <EditorToolbar
+                    editor={editor}
+                />
+            </div>
 
             <EditorContentArea
                 editor={editor}
                 userRole={userRole}
             />
+
         </div>
     );
 }

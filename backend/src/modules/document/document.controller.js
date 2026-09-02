@@ -311,6 +311,90 @@ const discardDocumentDraft = async (
     }
 };
 
+const getOwnedDocuments = async (req, res, next) => {
+    try {
+        const documents =
+            await documentService.getOwnedDocuments(
+                req.user._id
+            );
+
+        sendResponse(
+            res,
+            200,
+            documents,
+            "Owned documents fetched successfully"
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getSharedDocuments = async (req, res, next) => {
+    try {
+        const documents =
+            await documentService.getSharedDocuments(
+                req.user._id
+            );
+
+        sendResponse(
+            res,
+            200,
+            documents,
+            "Shared documents fetched successfully"
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getDocumentVersions = async (
+    req,
+    res,
+    next
+) => {
+
+    try {
+
+        const versions =
+            await documentService
+                .getDocumentVersions(
+                    req.params.documentId,
+                    req.user._id
+                );
+
+        sendResponse(
+            res,
+            200,
+            versions,
+            "Document versions fetched successfully"
+        );
+
+    } catch (error) {
+
+        next(error);
+
+    }
+};
+
+const restoreDocumentVersion = async (req, res, next) => {
+    try {
+        const result = await documentService.restoreDocumentVersion(
+            req.params.documentId,
+            req.params.versionId,
+            req.user._id
+        );
+
+        sendResponse(
+            res,
+            200,
+            result,
+            "Document version restored successfully"
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createDocument,
     getUserDocuments,
@@ -321,6 +405,9 @@ module.exports = {
     updateCollaboratorRole,
     removeCollaborator,
     saveDocument,
-    discardDocumentDraft
-
+    discardDocumentDraft,
+    getOwnedDocuments,
+    getSharedDocuments,
+    getDocumentVersions,
+    restoreDocumentVersion
 };

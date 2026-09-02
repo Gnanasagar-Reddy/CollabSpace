@@ -7,8 +7,13 @@ const collaborationService =
 const persistenceService =
     require("./services/document.persistence.service");
 
+const versionService =
+    require("./services/document.version.service");
+
+
 module.exports = {
     ...crudService,
     ...collaborationService,
-    ...persistenceService
+    ...persistenceService,
+    ...versionService
 };

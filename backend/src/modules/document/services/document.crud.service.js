@@ -18,25 +18,35 @@ const createDocument = async (
     return document;
 };
 
-const getUserDocuments = async (
-    userId
-) => {
-    const documents =
-        await Document.find({
-            $or: [
-                {
-                    owner: userId
-                },
-                {
-                    "collaborators.user":
-                        userId
-                }
-            ]
-        }).sort({
-            updatedAt: -1
-        });
 
-    return documents;
+const getUserDocuments = async (userId) => {
+    const documents = await Document.find({
+        $or: [
+            {
+                owner: userId
+            },
+            {
+                "collaborators.user": userId
+            }
+        ]
+    })
+        .sort({
+            updatedAt: -1
+        })
+        .lean();
+
+    return documents.map((document) => {
+        const isOwner =
+            document.owner.toString() ===
+            userId.toString();
+
+        return {
+            ...document,
+            accessType: isOwner
+                ? "owned"
+                : "shared"
+        };
+    });
 };
 
 const getDocumentById = async (
@@ -207,10 +217,32 @@ const deleteDocument = async (
     return document;
 };
 
+const getOwnedDocuments = async (userId) => {
+    const documents = await Document.find({
+        owner: userId
+    }).sort({
+        updatedAt: -1
+    });
+
+    return documents;
+};
+
+const getSharedDocuments = async (userId) => {
+    const documents = await Document.find({
+        "collaborators.user": userId
+    }).sort({
+        updatedAt: -1
+    });
+
+    return documents;
+};
+
 module.exports = {
     createDocument,
     getUserDocuments,
     getDocumentById,
     updateDocument,
-    deleteDocument
+    deleteDocument,
+    getOwnedDocuments,
+    getSharedDocuments
 };
