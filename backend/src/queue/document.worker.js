@@ -1,7 +1,9 @@
 const { Worker } = require("bullmq");
+
 const Document = require(
     "../modules/document/document.model"
 );
+
 const {
     redisClient
 } = require("../config/redis");
@@ -10,6 +12,7 @@ const worker =
     new Worker(
         "document-save",
         async (job) => {
+
             const {
                 documentId,
                 content
@@ -33,11 +36,11 @@ const worker =
         },
         {
             connection: {
-                host: "localhost",
-                port: 6379
+                url: process.env.REDIS_URL
             }
         }
     );
+
 
 worker.on(
     "failed",
@@ -48,3 +51,6 @@ worker.on(
         );
     }
 );
+
+
+module.exports = worker;

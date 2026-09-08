@@ -108,7 +108,7 @@ function Dashboard() {
         try {
 
             await api.patch(
-                `/documents/share-requests/${requestId}/accept`
+                `/documents/share-requests/${requestId}/reject`
             );
 
             await fetchRequests();

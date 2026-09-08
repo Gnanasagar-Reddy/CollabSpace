@@ -1,6 +1,6 @@
 const { Server } = require("socket.io");
 const { createAdapter } = require("@socket.io/redis-adapter");
-const { redisClient, redisSubscriber } = require("../config/redis");
+const { redisClient, socketPublisher, socketSubscriber } = require("../config/redis");
 const Document = require("../modules/document/document.model");
 const socketAuth = require("./socket.middleware");
 const {
@@ -24,8 +24,8 @@ const initializeSocket = (server) => {
 
     io.adapter(
         createAdapter(
-            redisClient,
-            redisSubscriber
+            socketPublisher,
+            socketSubscriber
         )
     );
 
@@ -72,7 +72,8 @@ const initializeSocket = (server) => {
                 socket.currentDocument = documentId;
                 await addUserToDocument(
                     documentId,
-                    socket.user
+                    socket.user,
+                    socket.id
                 );
 
 
@@ -103,10 +104,7 @@ const initializeSocket = (server) => {
 
             try {
 
-                console.log(
-                    "Document change received:",
-                    data
-                );
+                console.log("Document change received");
 
                 const document =
                     await Document.findById(data.documentId);
@@ -208,7 +206,7 @@ const initializeSocket = (server) => {
 
                 await removeUserFromDocument(
                     socket.currentDocument,
-                    socket.user
+                    socket.id
                 );
 
 

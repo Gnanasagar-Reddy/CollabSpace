@@ -180,7 +180,7 @@ function DashboardHeader({
                 DESKTOP TOP BAR
             ===================================================== */}
 
-            <header className="fixed right-0 top-0 z-30 hidden h-16 border-b border-gray-800 bg-gray-950 lg:flex lg:left-64">
+            <header className="fixed right-0 top-0 z-30 hidden h-16 border-b border-gray-200 bg-white lg:flex lg:left-64 dark:border-gray-800 dark:bg-gray-950">
 
                 <div className="flex w-full items-center justify-end gap-3 px-5">
 
@@ -191,7 +191,7 @@ function DashboardHeader({
                     <button
                         type="button"
                         onClick={onRequests}
-                        className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-gray-800 bg-gray-900 text-gray-300 transition hover:bg-gray-800 hover:text-white"
+                        className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
                         title="Collaboration requests"
                         aria-label="Collaboration requests"
                     >
@@ -367,11 +367,10 @@ function DashboardHeader({
             ===================================================== */}
 
             <aside
-                className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-gray-200 bg-white shadow-xl transition-transform duration-200 dark:border-gray-800 dark:bg-gray-950 lg:hidden ${
-                    sidebarOpen
-                        ? "translate-x-0"
-                        : "-translate-x-full"
-                }`}
+                className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-gray-200 bg-white shadow-xl transition-transform duration-200 dark:border-gray-800 dark:bg-gray-950 lg:hidden ${sidebarOpen
+                    ? "translate-x-0"
+                    : "-translate-x-full"
+                    }`}
             >
 
                 {/* HEADER */}

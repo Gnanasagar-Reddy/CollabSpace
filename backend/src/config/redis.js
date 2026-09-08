@@ -1,29 +1,76 @@
 const { createClient } = require("redis");
 
+
 const redisClient = createClient({
-    url:"redis://localhost:6379"
+    url: process.env.REDIS_URL
 });
 
-const redisSubscriber = redisClient.duplicate();
 
-redisClient.on("error",(error)=>{
-    console.log("Redis Client Error:",error);
-});
+const socketPublisher =
+    redisClient.duplicate();
 
-redisSubscriber.on("error",(error)=>{
-    console.log("Redis Subscriber Error:",error);
-});
 
-const connectRedis = async() => {
+const socketSubscriber =
+    redisClient.duplicate();
+
+
+redisClient.on(
+    "error",
+    (error) => {
+        console.log(
+            "Redis Client Error:",
+            error
+        );
+    }
+);
+
+
+socketPublisher.on(
+    "error",
+    (error) => {
+        console.log(
+            "Socket.IO Publisher Error:",
+            error
+        );
+    }
+);
+
+
+socketSubscriber.on(
+    "error",
+    (error) => {
+        console.log(
+            "Socket.IO Subscriber Error:",
+            error
+        );
+    }
+);
+
+
+const connectRedis = async () => {
 
     await redisClient.connect();
-    await redisSubscriber.connect();
 
-    console.log("Redis connected");
+    await socketPublisher.connect();
+
+    await socketSubscriber.connect();
+
+
+    console.log(
+        "Redis connected"
+    );
+
 };
 
+
 module.exports = {
+
     redisClient,
-    redisSubscriber,
+
+    socketPublisher,
+
+    socketSubscriber,
+
     connectRedis
+
 };

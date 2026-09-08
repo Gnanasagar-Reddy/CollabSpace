@@ -2,39 +2,53 @@ const { redisClient } = require("../config/redis");
 const User = require("../modules/auth/user.model");
 
 
-const addUserToDocument = async(
+const addUserToDocument = async (
     documentId,
-    userId
-)=>{
+    userId,
+    socketId
+) => {
 
-    await redisClient.sAdd(
+    await redisClient.hSet(
         `document:${documentId}:presence`,
+        socketId,
         userId.toString()
     );
 
 };
 
 
-const removeUserFromDocument = async(
+const removeUserFromDocument = async (
     documentId,
-    userId
-)=>{
+    socketId
+) => {
 
-    await redisClient.sRem(
+    await redisClient.hDel(
         `document:${documentId}:presence`,
-        userId.toString()
+        socketId
     );
 
 };
 
 
-const getDocumentUsers = async(
+const getDocumentUsers = async (
     documentId
-)=>{
+) => {
 
-    const userIds = await redisClient.sMembers(
-        `document:${documentId}:presence`
-    );
+    const connections =
+        await redisClient.hGetAll(
+            `document:${documentId}:presence`
+        );
+
+
+    const userIds =
+        [...new Set(
+            Object.values(connections)
+        )];
+
+
+    if (userIds.length === 0) {
+        return [];
+    }
 
 
     const users = await User.find({
@@ -47,7 +61,7 @@ const getDocumentUsers = async(
 
 
     return users.map(
-        (user)=>({
+        (user) => ({
             id: user._id.toString(),
             name: user.name,
             email: user.email
