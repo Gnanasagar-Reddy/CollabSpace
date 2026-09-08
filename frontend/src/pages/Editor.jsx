@@ -322,6 +322,7 @@ function Editor() {
             {showHistory && (
                 <VersionHistory
                     documentId={documentId}
+                    role={userRole}
                     onClose={() =>
                         setShowHistory(false)
                     }

@@ -18,7 +18,8 @@ const MAX_DOCUMENT_VERSIONS = 30;
 
 const checkEditPermission = (
     document,
-    userId
+    userId,
+    action = "save"
 ) => {
 
     const isOwner =
@@ -39,7 +40,7 @@ const checkEditPermission = (
     if (!isOwner && !isEditor) {
         throw new ApiError(
             403,
-            "You do not have permission to save this document"
+            `You do not have permission to ${action} this document`
         );
     }
 };
@@ -209,48 +210,89 @@ const saveDocumentNow = async (
     };
 };
 
-const restoreDocumentVersion = async (documentId, versionId, userId) => {
-    const document = await Document.findById(documentId);
+
+const restoreDocumentVersion = async (
+    documentId,
+    versionId,
+    userId
+) => {
+
+    const document =
+        await Document.findById(
+            documentId
+        );
 
     if (!document) {
-        throw new ApiError(404, "Document not found");
+        throw new ApiError(
+            404,
+            "Document not found"
+        );
     }
 
-    checkEditPermission(document, userId);
+    /*
+     * Only owner and editor can restore.
+     * Viewer/reader receives 403.
+     */
 
-    const version = await DocumentVersion.findOne({
-        _id: versionId,
-        document: documentId
-    });
+    checkEditPermission(
+        document,
+        userId,
+        "restore"
+    );
+
+    const version =
+        await DocumentVersion.findOne({
+            _id: versionId,
+            document: documentId
+        });
 
     if (!version) {
-        throw new ApiError(404, "Version not found");
+        throw new ApiError(
+            404,
+            "Version not found"
+        );
     }
 
     // Replace current document content with the selected version.
-    await Document.findByIdAndUpdate(documentId, {
-        content: version.content
-    });
 
-    // Create a NEW version so old history is never destroyed.
-    const restoredVersion = await createDocumentVersion(
+    await Document.findByIdAndUpdate(
         documentId,
-        userId,
-        version.content
+        {
+            content: version.content
+        }
     );
 
+    // Create a NEW version so old history is never destroyed.
+
+    const restoredVersion =
+        await createDocumentVersion(
+            documentId,
+            userId,
+            version.content
+        );
+
     // Remove any unsaved draft.
-    await redisClient.del(`document:${documentId}:content`);
+
+    await redisClient.del(
+        `document:${documentId}:content`
+    );
 
     // Remove pending autosave job if one exists.
-    const existingJob = await documentQueue.getJob(documentId);
+
+    const existingJob =
+        await documentQueue.getJob(
+            documentId
+        );
 
     if (existingJob) {
         await existingJob.remove();
     }
 
-    return { restoredVersion };
+    return {
+        restoredVersion
+    };
 };
+
 
 const discardDocumentDraft = async (
     documentId,

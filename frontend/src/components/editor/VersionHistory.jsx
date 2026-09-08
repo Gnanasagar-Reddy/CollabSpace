@@ -4,7 +4,8 @@ import api from "../../services/api";
 function VersionHistory({
     documentId,
     onClose,
-    onRestored
+    onRestored,
+    role
 }) {
     const [versions, setVersions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -12,6 +13,10 @@ function VersionHistory({
     const [selectedVersion, setSelectedVersion] = useState(null);
     const [restoreVersion, setRestoreVersion] = useState(null);
     const [restoring, setRestoring] = useState(false);
+
+    const canRestore =
+        role === "owner" ||
+        role === "editor";
 
     useEffect(() => {
         const fetchVersions = async () => {
@@ -62,7 +67,11 @@ function VersionHistory({
     };
 
     const handleRestore = async () => {
-        if (!restoreVersion || restoring) {
+        if (
+            !restoreVersion ||
+            restoring ||
+            !canRestore
+        ) {
             return;
         }
 
@@ -380,17 +389,19 @@ function VersionHistory({
                                     Close
                                 </button>
 
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setRestoreVersion(
-                                            selectedVersion
-                                        )
-                                    }
-                                    className="h-10 rounded-lg bg-indigo-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-                                >
-                                    Restore this version
-                                </button>
+                                {canRestore && (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setRestoreVersion(
+                                                selectedVersion
+                                            )
+                                        }
+                                        className="h-10 rounded-lg bg-indigo-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                                    >
+                                        Restore this version
+                                    </button>
+                                )}
 
                             </div>
 
@@ -402,7 +413,7 @@ function VersionHistory({
 
             {/* Restore Confirmation */}
 
-            {restoreVersion && (
+            {restoreVersion && canRestore && (
                 <div
                     className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px] dark:bg-black/60"
                     onMouseDown={(event) => {

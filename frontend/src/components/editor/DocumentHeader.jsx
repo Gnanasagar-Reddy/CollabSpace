@@ -306,72 +306,76 @@ function DocumentHeader({
 
                                     </div>
 
-                                    {/* OWNER OPTIONS */}
+                                    {/* DOCUMENT OPTIONS */}
+
+                                    {/* HISTORY — EVERYONE */}
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setProfileOpen(
+                                                false
+                                            );
+
+                                            onShowHistory();
+                                        }}
+                                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                                    >
+                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/70 dark:text-indigo-300">
+                                            ↶
+                                        </span>
+
+                                        <span>
+                                            History
+                                        </span>
+                                    </button>
+
+
+                                    {/* MEMBERS — EVERYONE */}
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setProfileOpen(
+                                                false
+                                            );
+
+                                            onShowCollaborators();
+                                        }}
+                                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                                    >
+                                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-950/70 dark:text-sky-300">
+                                            👥
+                                        </span>
+
+                                        <span>
+                                            Members
+                                        </span>
+                                    </button>
+
+
+                                    {/* SHARE — OWNER ONLY */}
 
                                     {role === "owner" && (
-                                        <>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setProfileOpen(
+                                                    false
+                                                );
 
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setProfileOpen(
-                                                        false
-                                                    );
+                                                onShare();
+                                            }}
+                                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                                        >
+                                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/70 dark:text-blue-300">
+                                                ↗
+                                            </span>
 
-                                                    onShowHistory();
-                                                }}
-                                                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-                                            >
-                                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/70 dark:text-indigo-300">
-                                                    ↶
-                                                </span>
-
-                                                <span>
-                                                    History
-                                                </span>
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setProfileOpen(
-                                                        false
-                                                    );
-
-                                                    onShare();
-                                                }}
-                                                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-                                            >
-                                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/70 dark:text-blue-300">
-                                                    ↗
-                                                </span>
-
-                                                <span>
-                                                    Share
-                                                </span>
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setProfileOpen(
-                                                        false
-                                                    );
-
-                                                    onShowCollaborators();
-                                                }}
-                                                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
-                                            >
-                                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-950/70 dark:text-sky-300">
-                                                    👥
-                                                </span>
-
-                                                <span>
-                                                    Members
-                                                </span>
-                                            </button>
-
-                                        </>
+                                            <span>
+                                                Share
+                                            </span>
+                                        </button>
                                     )}
 
                                 </div>
