@@ -1,9 +1,28 @@
 const authService = require("./auth.service");
 const sendResponse = require("../../utils/apiResponse");
 
+const REFRESH_TOKEN_MAX_AGE =
+    7 * 24 * 60 * 60 * 1000;
+
+const refreshTokenCookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/api/auth"
+};
+
 const register = async (req, res, next) => {
     try {
         const user = await authService.registerUser(req.body);
+        res.cookie(
+            "refreshToken",
+            refreshToken,
+            {
+                ...refreshTokenCookieOptions,
+                maxAge: REFRESH_TOKEN_MAX_AGE
+            }
+        );
+
         sendResponse(
             res,
             201,
@@ -43,8 +62,7 @@ const login = async (req, res, next) => {
                     name:user.name,
                     email:user.email
                 },
-                accessToken,
-                refreshToken
+                accessToken
             },
             "Login successful"
         );
@@ -56,8 +74,18 @@ const login = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
     try {
-        await authService.logoutUser(
-            req.body.refreshToken
+        const refreshToken =
+            req.cookies.refreshToken;
+
+        if (refreshToken) {
+            await authService.logoutUser(
+                refreshToken
+            );
+        }
+
+        res.clearCookie(
+            "refreshToken",
+            refreshTokenCookieOptions
         );
         sendResponse(
             res,
@@ -73,7 +101,7 @@ const logout = async (req, res, next) => {
 const refreshToken = async (req, res, next) => {
     try {
         const token =
-            req.body.refreshToken;
+            req.cookies.refreshToken;
         const accessToken =
             await authService.refreshAccessToken(
                 token

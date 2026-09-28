@@ -2,7 +2,8 @@ import axios from "axios";
 
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL
+    baseURL: import.meta.env.VITE_API_URL,
+    withCredentials: true
 });
 
 
@@ -48,45 +49,24 @@ api.interceptors.response.use(
 
 
         if (
+            originalRequest &&
             error.response?.status === 401 &&
             !originalRequest._retry
         ) {
-
-            console.log(
-                "Access token expired. Trying refresh..."
-            );
-
 
             originalRequest._retry = true;
 
 
             try {
 
-                const refreshToken =
-                    localStorage.getItem(
-                        "refreshToken"
-                    );
-
-
-                console.log(
-                    "Refresh token exists:",
-                    !!refreshToken
-                );
-
-
                 const response =
                     await axios.post(
                         `${import.meta.env.VITE_API_URL}/auth/refresh-token`,
+                        {},
                         {
-                            refreshToken
+                            withCredentials: true
                         }
                     );
-
-
-                console.log(
-                    "Refresh response:",
-                    response.data
-                );
 
 
                 const newAccessToken =
@@ -103,23 +83,12 @@ api.interceptors.response.use(
                     `Bearer ${newAccessToken}`;
 
 
-                console.log(
-                    "Retrying original request..."
-                );
-
-
                 return api(
                     originalRequest
                 );
 
 
             } catch (refreshError) {
-
-                console.log(
-                    "REFRESH FAILED:",
-                    refreshError.response?.data
-                );
-
 
                 return Promise.reject(
                     refreshError

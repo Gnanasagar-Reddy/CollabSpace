@@ -19,37 +19,25 @@ export const AuthProvider = ({
 
     const login = (
         userData,
-        accessToken,
-        refreshToken
+        accessToken
     ) => {
-        localStorage.setItem(
-            "accessToken",
-            accessToken
+        localStorage.removeItem(
+            "refreshToken"
         );
 
         localStorage.setItem(
-            "refreshToken",
-            refreshToken
+            "accessToken",
+            accessToken
         );
 
         setUser(userData);
     };
 
     const logout = async () => {
-        const refreshToken =
-            localStorage.getItem(
-                "refreshToken"
-            );
-
         try {
-            if (refreshToken) {
-                await api.post(
-                    "/auth/logout",
-                    {
-                        refreshToken
-                    }
-                );
-            }
+            await api.post(
+                "/auth/logout"
+            );
         } catch (error) {
             console.log(
                 "Logout error:",
@@ -61,25 +49,15 @@ export const AuthProvider = ({
                 "accessToken"
             );
 
-            localStorage.removeItem(
-                "refreshToken"
-            );
-
             setUser(null);
         }
     };
 
     useEffect(() => {
         const restoreUser = async () => {
-            const accessToken =
-                localStorage.getItem(
-                    "accessToken"
-                );
-
-            if (!accessToken) {
-                setLoading(false);
-                return;
-            }
+            localStorage.removeItem(
+                "refreshToken"
+            );
 
             try {
                 const response =
@@ -99,10 +77,6 @@ export const AuthProvider = ({
 
                 localStorage.removeItem(
                     "accessToken"
-                );
-
-                localStorage.removeItem(
-                    "refreshToken"
                 );
 
                 setUser(null);

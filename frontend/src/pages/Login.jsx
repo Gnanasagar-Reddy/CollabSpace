@@ -36,14 +36,12 @@ function Login() {
 
             const {
                 user,
-                accessToken,
-                refreshToken
+                accessToken
             } = response.data.data;
 
             login(
                 user,
-                accessToken,
-                refreshToken
+                accessToken
             );
 
             navigate("/dashboard");

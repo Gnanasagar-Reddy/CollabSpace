@@ -69,11 +69,6 @@ const loginUser = async (email, password) => {
 
     });
 
-    console.log({
-        accessToken,
-        refreshToken
-    });
-
     return {
         user,
         accessToken,

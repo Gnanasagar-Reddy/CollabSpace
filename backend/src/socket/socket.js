@@ -157,8 +157,7 @@ const initializeSocket = (server) => {
                 );
 
                 await addDocumentSaveJob(
-                    data.documentId,
-                    data.content
+                    data.documentId
                 );
 
                 console.log(

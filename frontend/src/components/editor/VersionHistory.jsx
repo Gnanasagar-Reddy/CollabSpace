@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
+import VersionPreview from "./VersionPreview";
 
 function VersionHistory({
     documentId,
@@ -358,13 +359,8 @@ function VersionHistory({
 
                             <div className="mx-auto min-h-full w-full max-w-4xl rounded-xl border border-gray-200 bg-white px-8 py-10 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:px-12 lg:px-16">
 
-                                <div
-                                    className="tiptap-editor text-gray-900 dark:text-gray-100"
-                                    dangerouslySetInnerHTML={{
-                                        __html:
-                                            selectedVersion.content ||
-                                            "<p>No content available.</p>"
-                                    }}
+                                <VersionPreview
+                                    content={selectedVersion.content}
                                 />
 
                             </div>
