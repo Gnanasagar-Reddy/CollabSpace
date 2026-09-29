@@ -16,6 +16,13 @@ const documentSchema = new mongoose.Schema({
     },
 
 
+    versionSequence:{
+        type:Number,
+        default:0,
+        select:false
+    },
+
+
     owner:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"User",

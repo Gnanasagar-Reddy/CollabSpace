@@ -12,6 +12,11 @@ const {
     getDocumentUsers
 } = require("../services/presence.service");
 
+const MAX_DOCUMENT_CONTENT_LENGTH =
+    1_000_000;
+const DOCUMENT_CHANGE_WINDOW_MS = 1000;
+const MAX_DOCUMENT_CHANGES_PER_WINDOW = 30;
+
 
 
 const initializeSocket = (server) => {
@@ -35,6 +40,10 @@ const initializeSocket = (server) => {
 
         console.log("Socket connected:", socket.id);
         console.log("User:", socket.user);
+
+        socket.documentChangeWindowStartedAt =
+            Date.now();
+        socket.documentChangeCount = 0;
 
         socket.on("join-document", async (documentId) => {
 
@@ -106,6 +115,75 @@ const initializeSocket = (server) => {
 
                 console.log("Document change received");
 
+                if (
+                    !data ||
+                    typeof data.documentId !== "string" ||
+                    typeof data.content !== "string"
+                ) {
+                    return socket.emit(
+                        "socket-error",
+                        {
+                            message: "Invalid document update"
+                        }
+                    );
+                }
+
+                if (
+                    data.content.length >
+                    MAX_DOCUMENT_CONTENT_LENGTH
+                ) {
+                    return socket.emit(
+                        "socket-error",
+                        {
+                            message:
+                                "Document content is too large"
+                        }
+                    );
+                }
+
+                const now = Date.now();
+
+                if (
+                    now -
+                    socket.documentChangeWindowStartedAt >=
+                    DOCUMENT_CHANGE_WINDOW_MS
+                ) {
+                    socket.documentChangeWindowStartedAt = now;
+                    socket.documentChangeCount = 0;
+                }
+
+                if (
+                    socket.documentChangeCount >=
+                    MAX_DOCUMENT_CHANGES_PER_WINDOW
+                ) {
+                    return socket.emit(
+                        "socket-error",
+                        {
+                            message:
+                                "Too many document updates"
+                        }
+                    );
+                }
+
+                socket.documentChangeCount += 1;
+
+                const room =
+                    `document_${data.documentId}`;
+
+                if (
+                    socket.currentDocument !==
+                    data.documentId ||
+                    !socket.rooms.has(room)
+                ) {
+                    return socket.emit(
+                        "socket-error",
+                        {
+                            message:
+                                "Join the document before editing"
+                        }
+                    );
+                }
+
                 const document =
                     await Document.findById(data.documentId);
 
@@ -163,9 +241,6 @@ const initializeSocket = (server) => {
                 console.log(
                     "Document content stored in Redis"
                 );
-
-                const room =
-                    `document_${data.documentId}`;
 
                 // Send update to other users in the document room
                 socket.to(room).emit(

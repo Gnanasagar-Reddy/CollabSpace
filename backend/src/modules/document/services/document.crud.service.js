@@ -1,4 +1,10 @@
 const Document = require("../document.model");
+const DocumentVersion = require(
+    "../document.version.model"
+);
+const CollaborationRequest = require(
+    "../collaborationRequest.model"
+);
 const ApiError = require("../../../utils/ApiError");
 const { redisClient } =
     require("../../../config/redis");
@@ -6,15 +12,72 @@ const {
     removeDocumentSaveJobs
 } = require("../../../queue/document.queue");
 
+const MAX_DOCUMENT_TITLE_LENGTH = 200;
+const MAX_DOCUMENT_CONTENT_LENGTH =
+    1_000_000;
+
+const validateTitle = (title) => {
+    if (typeof title !== "string") {
+        throw new ApiError(
+            400,
+            "Document title must be text"
+        );
+    }
+
+    const cleanTitle = title.trim();
+
+    if (!cleanTitle) {
+        throw new ApiError(
+            400,
+            "Document title is required"
+        );
+    }
+
+    if (cleanTitle.length > MAX_DOCUMENT_TITLE_LENGTH) {
+        throw new ApiError(
+            400,
+            "Document title is too long"
+        );
+    }
+
+    return cleanTitle;
+};
+
+const validateContent = (content) => {
+    if (typeof content !== "string") {
+        throw new ApiError(
+            400,
+            "Document content must be text"
+        );
+    }
+
+    if (content.length > MAX_DOCUMENT_CONTENT_LENGTH) {
+        throw new ApiError(
+            400,
+            "Document content is too large"
+        );
+    }
+
+    return content;
+};
+
 const createDocument = async (
     userId,
     documentData
 ) => {
+    const title = validateTitle(
+        documentData?.title
+    );
+
+    const content =
+        documentData?.content === undefined
+            ? ""
+            : validateContent(documentData.content);
+
     const document =
         await Document.create({
-            title: documentData.title,
-            content:
-                documentData.content || "",
+            title,
+            content,
             owner: userId
         });
 
@@ -131,6 +194,17 @@ const updateDocument = async (
     userId,
     updateData
 ) => {
+    if (
+        !updateData ||
+        typeof updateData !== "object" ||
+        Array.isArray(updateData)
+    ) {
+        throw new ApiError(
+            400,
+            "Document update data is required"
+        );
+    }
+
     const document =
         await Document.findById(
             documentId
@@ -168,17 +242,22 @@ const updateDocument = async (
         );
     }
 
-    if (updateData.title) {
-        document.title =
-            updateData.title;
+    const isTitleUpdate =
+        Object.hasOwn(updateData, "title");
+
+    if (isTitleUpdate) {
+        document.title = validateTitle(
+            updateData.title
+        );
     }
 
     const isContentUpdate =
         updateData.content !== undefined;
 
     if (isContentUpdate) {
-        document.content =
-            updateData.content;
+        document.content = validateContent(
+            updateData.content
+        );
     }
 
     await document.save();
@@ -221,9 +300,23 @@ const deleteDocument = async (
         );
     }
 
-    await Document.findByIdAndDelete(
-        documentId
-    );
+    await Promise.all([
+        DocumentVersion.deleteMany({
+            document: documentId
+        }),
+        CollaborationRequest.deleteMany({
+            document: documentId
+        }),
+        redisClient.del(
+            `document:${documentId}:content`,
+            `document:${documentId}:presence`
+        ),
+        removeDocumentSaveJobs(documentId)
+    ]);
+
+    await Document.deleteOne({
+        _id: documentId
+    });
 
     return document;
 };

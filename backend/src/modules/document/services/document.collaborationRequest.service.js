@@ -148,16 +148,27 @@ const acceptCollaborationRequest = async (
     userId
 ) => {
     const request =
-        await CollaborationRequest.findOne({
-            _id: requestId,
-            recipient: userId,
-            status: "pending"
-        });
+        await CollaborationRequest
+            .findOneAndUpdate(
+                {
+                    _id: requestId,
+                    recipient: userId,
+                    status: "pending"
+                },
+                {
+                    $set: {
+                        status: "accepted"
+                    }
+                },
+                {
+                    new: true
+                }
+            );
 
     if (!request) {
         throw new ApiError(
             404,
-            "Collaboration request not found"
+            "Collaboration request is no longer pending"
         );
     }
 
@@ -167,9 +178,16 @@ const acceptCollaborationRequest = async (
         );
 
     if (!document) {
-        request.status = "rejected";
-
-        await request.save();
+        await CollaborationRequest.updateOne(
+            {
+                _id: request._id
+            },
+            {
+                $set: {
+                    status: "rejected"
+                }
+            }
+        );
 
         throw new ApiError(
             404,
@@ -177,27 +195,28 @@ const acceptCollaborationRequest = async (
         );
     }
 
-    const alreadyCollaborator =
-        document.collaborators.some(
-            (collaborator) =>
-                collaborator.user.toString() ===
-                userId.toString()
+    const updatedDocument =
+        await Document.findOneAndUpdate(
+            {
+                _id: request.document,
+                "collaborators.user": {
+                    $ne: userId
+                }
+            },
+            {
+                $push: {
+                    collaborators: {
+                        user: userId,
+                        role: request.role
+                    }
+                }
+            },
+            {
+                new: true
+            }
         );
 
-    if (!alreadyCollaborator) {
-        document.collaborators.push({
-            user: userId,
-            role: request.role
-        });
-
-        await document.save();
-    }
-
-    request.status = "accepted";
-
-    await request.save();
-
-    return document;
+    return updatedDocument || document;
 };
 
 const rejectCollaborationRequest = async (

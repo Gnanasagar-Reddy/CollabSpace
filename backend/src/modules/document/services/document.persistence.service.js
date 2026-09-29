@@ -73,15 +73,47 @@ const createDocumentVersion = async (
         return latestVersion;
     }
 
-    const nextVersion =
-        latestVersion
-            ? latestVersion.version + 1
-            : 1;
+    await Document.updateOne(
+        {
+            _id: documentId,
+            versionSequence: {
+                $exists: false
+            }
+        },
+        {
+            $set: {
+                versionSequence:
+                    latestVersion?.version || 0
+            }
+        }
+    );
+
+    const documentWithNextVersion =
+        await Document.findByIdAndUpdate(
+            documentId,
+            {
+                $inc: {
+                    versionSequence: 1
+                }
+            },
+            {
+                new: true
+            }
+        ).select("+versionSequence");
+
+    if (!documentWithNextVersion) {
+        throw new ApiError(
+            404,
+            "Document not found"
+        );
+    }
 
     const version =
         await DocumentVersion.create({
             document: documentId,
-            version: nextVersion,
+            version:
+                documentWithNextVersion
+                    .versionSequence,
             content,
             createdBy: userId
         });

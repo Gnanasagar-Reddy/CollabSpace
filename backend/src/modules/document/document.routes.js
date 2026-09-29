@@ -1,9 +1,11 @@
 const express = require("express");
+const mongoose = require("mongoose");
 
 const router = express.Router();
 
 const protect =
     require("../../middleware/auth.middleware");
+const ApiError = require("../../utils/ApiError");
 
 const {
     createDocument,
@@ -24,6 +26,34 @@ const {
     acceptCollaborationRequest,
     rejectCollaborationRequest
 } = require("./document.controller");
+
+const objectIdParameters = {
+    id: "document ID",
+    documentId: "document ID",
+    requestId: "collaboration request ID",
+    userId: "user ID",
+    versionId: "version ID"
+};
+
+Object.entries(objectIdParameters).forEach(
+    ([parameter, label]) => {
+        router.param(
+            parameter,
+            (req, res, next, value) => {
+                if (!mongoose.isValidObjectId(value)) {
+                    return next(
+                        new ApiError(
+                            400,
+                            `Invalid ${label}`
+                        )
+                    );
+                }
+
+                next();
+            }
+        );
+    }
+);
 
 
 /* =========================
