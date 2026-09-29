@@ -171,6 +171,7 @@ const initializeSocket = (server) => {
                 socket.to(room).emit(
                     "document-update",
                     {
+                        documentId: data.documentId,
                         content: data.content
                     }
                 );

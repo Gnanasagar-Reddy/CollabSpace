@@ -153,45 +153,6 @@ const deleteDocument = async (
 
 };
 
-const shareDocument = async (
-    req,
-    res,
-    next
-) => {
-
-    try {
-
-        const {
-            email,
-            role
-        } = req.body;
-
-
-        const document =
-            await documentService.shareDocument(
-                req.params.id,
-                req.user._id,
-                email,
-                role
-            );
-
-
-        sendResponse(
-            res,
-            200,
-            document,
-            "Document shared successfully"
-        );
-
-    }
-    catch (error) {
-
-        next(error);
-
-    }
-
-};
-
 const updateCollaboratorRole = async (
     req,
     res,
@@ -505,7 +466,6 @@ module.exports = {
     getDocumentById,
     updateDocument,
     deleteDocument,
-    shareDocument,
     updateCollaboratorRole,
     removeCollaborator,
     saveDocument,

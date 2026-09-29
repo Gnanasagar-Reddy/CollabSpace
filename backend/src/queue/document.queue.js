@@ -11,11 +11,13 @@ const documentQueue = new Queue(
 
 const AUTOSAVE_DELAY = 1000 * 60 * 3;
 
+const getDocumentJobIds = (documentId) => [
+    documentId,
+    `${documentId}:next`
+];
+
 const getPendingJob = async (documentId) => {
-    const jobIds = [
-        documentId,
-        `${documentId}:next`
-    ];
+    const jobIds = getDocumentJobIds(documentId);
 
     for (const jobId of jobIds) {
         const job = await documentQueue.getJob(jobId);
@@ -32,6 +34,16 @@ const getPendingJob = async (documentId) => {
     }
 
     return null;
+};
+
+const removeDocumentSaveJobs = async (documentId) => {
+    for (const jobId of getDocumentJobIds(documentId)) {
+        const job = await documentQueue.getJob(jobId);
+
+        if (job) {
+            await job.remove();
+        }
+    }
 };
 
 const addDocumentSaveJob = async (documentId) => {
@@ -66,5 +78,6 @@ const addDocumentSaveJob = async (documentId) => {
 
 module.exports = {
     documentQueue,
-    addDocumentSaveJob
+    addDocumentSaveJob,
+    removeDocumentSaveJobs
 };

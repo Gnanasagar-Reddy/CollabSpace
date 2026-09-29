@@ -117,6 +117,30 @@ function CollaborationEditor({
             return;
         }
 
+        const nextContent = content || "";
+
+        if (editor.getHTML() === nextContent) {
+            return;
+        }
+
+        isReceivingUpdate.current = true;
+
+        editor.commands.setContent(
+            nextContent,
+            false
+        );
+
+        isReceivingUpdate.current = false;
+    }, [
+        editor,
+        content
+    ]);
+
+    useEffect(() => {
+        if (!editor) {
+            return;
+        }
+
         const handleDocumentUpdate =
             (data) => {
                 if (

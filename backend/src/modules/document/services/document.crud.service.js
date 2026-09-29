@@ -2,6 +2,9 @@ const Document = require("../document.model");
 const ApiError = require("../../../utils/ApiError");
 const { redisClient } =
     require("../../../config/redis");
+const {
+    removeDocumentSaveJobs
+} = require("../../../queue/document.queue");
 
 const createDocument = async (
     userId,
@@ -170,15 +173,23 @@ const updateDocument = async (
             updateData.title;
     }
 
-    if (
-        updateData.content !==
-        undefined
-    ) {
+    const isContentUpdate =
+        updateData.content !== undefined;
+
+    if (isContentUpdate) {
         document.content =
             updateData.content;
     }
 
     await document.save();
+
+    if (isContentUpdate) {
+        await redisClient.del(
+            `document:${documentId}:content`
+        );
+
+        await removeDocumentSaveJobs(documentId);
+    }
 
     return document;
 };

@@ -9,7 +9,7 @@ const {
 } = require("../../../config/redis");
 
 const {
-    documentQueue
+    removeDocumentSaveJobs
 } = require("../../../queue/document.queue");
 
 
@@ -187,14 +187,7 @@ const saveDocumentNow = async (
      * Remove the delayed autosave job.
      */
 
-    const existingJob =
-        await documentQueue.getJob(
-            documentId
-        );
-
-    if (existingJob) {
-        await existingJob.remove();
-    }
+    await removeDocumentSaveJobs(documentId);
 
     /*
      * Remove the temporary Redis draft.
@@ -279,14 +272,7 @@ const restoreDocumentVersion = async (
 
     // Remove pending autosave job if one exists.
 
-    const existingJob =
-        await documentQueue.getJob(
-            documentId
-        );
-
-    if (existingJob) {
-        await existingJob.remove();
-    }
+    await removeDocumentSaveJobs(documentId);
 
     return {
         restoredVersion
@@ -320,14 +306,7 @@ const discardDocumentDraft = async (
         `document:${documentId}:content`
     );
 
-    const existingJob =
-        await documentQueue.getJob(
-            documentId
-        );
-
-    if (existingJob) {
-        await existingJob.remove();
-    }
+    await removeDocumentSaveJobs(documentId);
 
     return {
         message:

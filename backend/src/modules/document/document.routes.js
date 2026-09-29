@@ -11,7 +11,6 @@ const {
     getDocumentById,
     updateDocument,
     deleteDocument,
-    shareDocument,
     updateCollaboratorRole,
     removeCollaborator,
     saveDocument,
@@ -113,12 +112,6 @@ router.post(
     "/:id/share-request",
     protect,
     sendCollaborationRequest
-);
-
-router.post(
-    "/:id/share",
-    protect,
-    shareDocument
 );
 
 router.patch(
