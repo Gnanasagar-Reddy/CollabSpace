@@ -1,6 +1,9 @@
 const documentService = require("./document.service");
 const sendResponse = require("../../utils/apiResponse");
 const collaborationRequestService = require("./services/document.collaborationRequest.service");
+const {
+    getIo
+} = require("../../socket/socket");
 
 
 
@@ -346,6 +349,21 @@ const restoreDocumentVersion = async (req, res, next) => {
             req.params.versionId,
             req.user._id
         );
+
+        const io = getIo();
+
+        if (io) {
+            io.to(
+                `document_${req.params.documentId}`
+            ).emit(
+                "document-restored",
+                {
+                    documentId: req.params.documentId,
+                    collaborationVersion:
+                        result.collaborationVersion
+                }
+            );
+        }
 
         sendResponse(
             res,

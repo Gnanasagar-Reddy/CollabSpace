@@ -10,12 +10,29 @@ const {
 } = require("./auth.controller");
 
 const protect = require("../../middleware/auth.middleware");
+const {
+    loginLimiter,
+    registrationLimiter,
+    refreshLimiter
+} = require("../../middleware/rateLimit.middleware");
 
-router.post("/register", register);
+router.post(
+    "/register",
+    registrationLimiter,
+    register
+);
 
-router.post("/login", login);
+router.post(
+    "/login",
+    loginLimiter,
+    login
+);
 
-router.post("/refresh-token", refreshToken);
+router.post(
+    "/refresh-token",
+    refreshLimiter,
+    refreshToken
+);
 
 router.post("/logout", logout);
 

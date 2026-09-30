@@ -23,6 +23,19 @@ const documentSchema = new mongoose.Schema({
     },
 
 
+    yjsState:{
+        type:String,
+        default:"",
+        select:false
+    },
+
+
+    collaborationVersion:{
+        type:Number,
+        default:0
+    },
+
+
     owner:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"User",

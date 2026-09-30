@@ -165,7 +165,7 @@ const saveDocumentNow = async (
     const document =
         await Document.findById(
             documentId
-        );
+        ).select("+yjsState");
 
     if (!document) {
         throw new ApiError(
@@ -182,27 +182,44 @@ const saveDocumentNow = async (
     const redisKey =
         `document:${documentId}:content`;
 
-    const content =
+    const redisContent =
         await redisClient.get(
             redisKey
         );
 
-    if (content === null) {
+    const isCrdtSave =
+        redisContent === null &&
+        Boolean(document.yjsState);
+
+    if (
+        redisContent === null &&
+        !isCrdtSave
+    ) {
         throw new ApiError(
             400,
             "No unsaved changes found"
         );
     }
 
+    const content = isCrdtSave
+        ? document.content
+        : redisContent;
+
     /*
      * First persist the current content.
      */
 
+    const updateData = {
+        content
+    };
+
+    if (!isCrdtSave) {
+        updateData.yjsState = "";
+    }
+
     await Document.findByIdAndUpdate(
         documentId,
-        {
-            content
-        }
+        updateData
     );
 
     /*
@@ -219,15 +236,17 @@ const saveDocumentNow = async (
      * Remove the delayed autosave job.
      */
 
-    await removeDocumentSaveJobs(documentId);
+    if (!isCrdtSave) {
+        await removeDocumentSaveJobs(documentId);
+    }
 
     /*
      * Remove the temporary Redis draft.
      */
 
-    await redisClient.del(
-        redisKey
-    );
+    if (!isCrdtSave) {
+        await redisClient.del(redisKey);
+    }
 
     return {
         message:
@@ -280,10 +299,20 @@ const restoreDocumentVersion = async (
 
     // Replace current document content with the selected version.
 
-    await Document.findByIdAndUpdate(
+    const restoredDocument =
+        await Document.findByIdAndUpdate(
         documentId,
         {
-            content: version.content
+            $set: {
+                content: version.content,
+                yjsState: ""
+            },
+            $inc: {
+                collaborationVersion: 1
+            }
+        },
+        {
+            new: true
         }
     );
 
@@ -307,7 +336,9 @@ const restoreDocumentVersion = async (
     await removeDocumentSaveJobs(documentId);
 
     return {
-        restoredVersion
+        restoredVersion,
+        collaborationVersion:
+            restoredDocument.collaborationVersion
     };
 };
 

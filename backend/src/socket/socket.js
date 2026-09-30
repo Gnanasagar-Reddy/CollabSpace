@@ -9,7 +9,7 @@ const {
 const {
     addUserToDocument,
     removeUserFromDocument,
-    getDocumentUsers
+    getUsersByIds
 } = require("../services/presence.service");
 
 const MAX_DOCUMENT_CONTENT_LENGTH =
@@ -19,6 +19,8 @@ const MAX_DOCUMENT_CHANGES_PER_WINDOW = 30;
 
 
 
+let ioInstance;
+
 const initializeSocket = (server) => {
 
     const io = new Server(server, {
@@ -26,6 +28,8 @@ const initializeSocket = (server) => {
             origin: "*"
         }
     });
+
+    ioInstance = io;
 
     io.adapter(
         createAdapter(
@@ -44,6 +48,27 @@ const initializeSocket = (server) => {
         socket.documentChangeWindowStartedAt =
             Date.now();
         socket.documentChangeCount = 0;
+        socket.data.userId = socket.user.toString();
+
+        const getConnectedUsers = async (documentId) => {
+            const connectedSockets =
+                await io.in(
+                    `document_${documentId}`
+                ).fetchSockets();
+
+            const userIds = [
+                ...new Set(
+                    connectedSockets
+                        .map(
+                            (connectedSocket) =>
+                                connectedSocket.data.userId
+                        )
+                        .filter(Boolean)
+                )
+            ];
+
+            return getUsersByIds(userIds);
+        };
 
         socket.on("join-document", async (documentId) => {
 
@@ -87,7 +112,7 @@ const initializeSocket = (server) => {
 
 
                 const users =
-                    await getDocumentUsers(documentId);
+                    await getConnectedUsers(documentId);
 
 
                 io.to(room).emit(
@@ -286,7 +311,7 @@ const initializeSocket = (server) => {
 
 
                 const users =
-                    await getDocumentUsers(
+                    await getConnectedUsers(
                         socket.currentDocument
                     );
 
@@ -310,3 +335,4 @@ const initializeSocket = (server) => {
 };
 
 module.exports = initializeSocket;
+module.exports.getIo = () => ioInstance;

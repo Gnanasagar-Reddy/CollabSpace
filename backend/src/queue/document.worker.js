@@ -48,7 +48,8 @@ const worker =
             await Document.findByIdAndUpdate(
                 documentId,
                 {
-                    content
+                    content,
+                    yjsState: ""
                 }
             );
 

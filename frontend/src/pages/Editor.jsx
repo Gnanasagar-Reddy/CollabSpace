@@ -1,4 +1,8 @@
-import { useState } from "react";
+import {
+    useCallback,
+    useRef,
+    useState
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import useDocument from "../hooks/useDocument";
@@ -16,6 +20,15 @@ function Editor() {
     const { documentId } = useParams();
     const navigate = useNavigate();
 
+    const collaborationSaveRef = useRef(null);
+
+    const setCollaborationSave = useCallback(
+        (save) => {
+            collaborationSaveRef.current = save;
+        },
+        []
+    );
+
     const {
         document,
         userRole,
@@ -26,7 +39,10 @@ function Editor() {
 
     const {
         onlineUsers
-    } = useDocumentSocket(documentId);
+    } = useDocumentSocket(
+        documentId,
+        reload
+    );
 
     const [editingTitle, setEditingTitle] =
         useState(false);
@@ -155,6 +171,8 @@ function Editor() {
         try {
             setSaving(true);
 
+            await collaborationSaveRef.current?.();
+
             await api.post(
                 `/documents/${documentId}/save`
             );
@@ -188,25 +206,8 @@ function Editor() {
     };
 
     const exitWithoutSaving = async () => {
-        try {
-            await api.delete(
-                `/documents/${documentId}/draft`
-            );
-
-            setShowExitModal(false);
-
-            navigate("/dashboard");
-        } catch (error) {
-            console.log(
-                error.response?.data ||
-                error
-            );
-
-            alert(
-                error.response?.data?.message ||
-                "Failed to discard changes"
-            );
-        }
+        setShowExitModal(false);
+        navigate("/dashboard");
     };
 
     const saveAndExit = async () => {
@@ -216,6 +217,8 @@ function Editor() {
 
         try {
             setSaving(true);
+
+            await collaborationSaveRef.current?.();
 
             await api.post(
                 `/documents/${documentId}/save`
@@ -298,9 +301,18 @@ function Editor() {
                     <section className="min-w-0 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
 
                         <CollaborationEditor
+                            key={
+                                `${documentId}:` +
+                                (document.collaborationVersion || 0)
+                            }
                             documentId={documentId}
-                            content={document.content}
                             userRole={userRole}
+                            onSaveReady={
+                                setCollaborationSave
+                            }
+                            collaborationVersion={
+                                document.collaborationVersion || 0
+                            }
                         />
 
                     </section>

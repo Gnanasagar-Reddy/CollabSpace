@@ -4,25 +4,23 @@ const sendResponse = require("../../utils/apiResponse");
 const REFRESH_TOKEN_MAX_AGE =
     7 * 24 * 60 * 60 * 1000;
 
+const useCrossSiteCookies =
+    process.env.CROSS_SITE_COOKIES === "true";
+
 const refreshTokenCookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure:
+        process.env.NODE_ENV === "production" ||
+        useCrossSiteCookies,
+    sameSite: useCrossSiteCookies
+        ? "none"
+        : "lax",
     path: "/api/auth"
 };
 
 const register = async (req, res, next) => {
     try {
         const user = await authService.registerUser(req.body);
-        res.cookie(
-            "refreshToken",
-            refreshToken,
-            {
-                ...refreshTokenCookieOptions,
-                maxAge: REFRESH_TOKEN_MAX_AGE
-            }
-        );
-
         sendResponse(
             res,
             201,
@@ -51,6 +49,15 @@ const login = async (req, res, next) => {
                 email,
                 password
             );
+
+        res.cookie(
+            "refreshToken",
+            refreshToken,
+            {
+                ...refreshTokenCookieOptions,
+                maxAge: REFRESH_TOKEN_MAX_AGE
+            }
+        );
 
 
         sendResponse(
@@ -102,10 +109,22 @@ const refreshToken = async (req, res, next) => {
     try {
         const token =
             req.cookies.refreshToken;
-        const accessToken =
+        const {
+            accessToken,
+            refreshToken
+        } =
             await authService.refreshAccessToken(
                 token
             );
+
+        res.cookie(
+            "refreshToken",
+            refreshToken,
+            {
+                ...refreshTokenCookieOptions,
+                maxAge: REFRESH_TOKEN_MAX_AGE
+            }
+        );
         sendResponse(
             res,
             200,

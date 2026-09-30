@@ -70,9 +70,32 @@ const getDocumentUsers = async (
 
 };
 
+const getUsersByIds = async (userIds) => {
+    if (userIds.length === 0) {
+        return [];
+    }
+
+    const users = await User.find({
+        _id: {
+            $in: userIds
+        }
+    }).select(
+        "_id name email"
+    );
+
+    return users.map(
+        (user) => ({
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email
+        })
+    );
+};
+
 
 module.exports = {
     addUserToDocument,
     removeUserFromDocument,
-    getDocumentUsers
+    getDocumentUsers,
+    getUsersByIds
 };

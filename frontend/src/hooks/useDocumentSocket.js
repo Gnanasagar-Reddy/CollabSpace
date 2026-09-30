@@ -1,15 +1,29 @@
-import { useEffect, useState } from "react";
+import {
+    useEffect,
+    useRef,
+    useState
+} from "react";
 import socket, {
     connectSocket
 } from "../socket/socket";
 
-function useDocumentSocket(documentId) {
+function useDocumentSocket(
+    documentId,
+    onDocumentRestored
+) {
     const [onlineUsers, setOnlineUsers] =
         useState([]);
+
+    const disconnectTimer = useRef(null);
 
     useEffect(() => {
         if (!documentId) {
             return;
+        }
+
+        if (disconnectTimer.current) {
+            clearTimeout(disconnectTimer.current);
+            disconnectTimer.current = null;
         }
 
         const handleConnect = () => {
@@ -30,6 +44,15 @@ function useDocumentSocket(documentId) {
             );
         };
 
+        const handleDocumentRestored = (data) => {
+            if (
+                data.documentId === documentId &&
+                onDocumentRestored
+            ) {
+                onDocumentRestored();
+            }
+        };
+
         socket.on(
             "connect",
             handleConnect
@@ -38,6 +61,11 @@ function useDocumentSocket(documentId) {
         socket.on(
             "presence-update",
             handlePresenceUpdate
+        );
+
+        socket.on(
+            "document-restored",
+            handleDocumentRestored
         );
 
         connectSocket();
@@ -57,9 +85,20 @@ function useDocumentSocket(documentId) {
                 handlePresenceUpdate
             );
 
-            socket.disconnect();
+            socket.off(
+                "document-restored",
+                handleDocumentRestored
+            );
+
+            disconnectTimer.current = setTimeout(() => {
+                socket.disconnect();
+                disconnectTimer.current = null;
+            }, 0);
         };
-    }, [documentId]);
+    }, [
+        documentId,
+        onDocumentRestored
+    ]);
 
     return {
         onlineUsers

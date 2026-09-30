@@ -9,6 +9,10 @@ const errorHandler = require("./middleware/error.middleware");
 
 const app = express();
 
+if (process.env.TRUST_PROXY === "true") {
+    app.set("trust proxy", 1);
+}
+
 app.use(cors({
     origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
     credentials: true

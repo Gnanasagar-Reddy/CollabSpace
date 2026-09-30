@@ -62,6 +62,20 @@ const connectRedis = async () => {
 
 };
 
+const closeRedis = async () => {
+    const clients = [
+        socketSubscriber,
+        socketPublisher,
+        redisClient
+    ];
+
+    for (const client of clients) {
+        if (client.isOpen) {
+            await client.quit();
+        }
+    }
+};
+
 
 module.exports = {
 
@@ -71,6 +85,8 @@ module.exports = {
 
     socketSubscriber,
 
-    connectRedis
+    connectRedis,
+
+    closeRedis
 
 };

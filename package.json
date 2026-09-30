@@ -1,0 +1,16 @@
+{
+  "name": "collabspace",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail --names api-1,api-2,api-3,worker,crdt,frontend --prefix-colors blue,green,magenta,yellow,cyan,white \"npm run dev:api:1\" \"npm run dev:api:2\" \"npm run dev:api:3\" \"npm run dev:worker\" \"npm run dev:crdt\" \"npm run dev:frontend\"",
+    "dev:api:1": "cd backend && set PORT=5001 && npm run dev",
+    "dev:api:2": "cd backend && set PORT=5002 && npm run dev",
+    "dev:api:3": "cd backend && set PORT=5003 && npm run dev",
+    "dev:worker": "cd backend && npm run worker:dev",
+    "dev:crdt": "cd backend && npm run collaboration:dev",
+    "dev:frontend": "cd frontend && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

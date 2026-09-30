@@ -1,5 +1,6 @@
 import axios from "axios";
 
+let refreshRequest;
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
@@ -47,10 +48,14 @@ api.interceptors.response.use(
         const originalRequest =
             error.config;
 
+        const isAuthRequest =
+            originalRequest?.url?.includes("/auth/");
+
 
         if (
             originalRequest &&
             error.response?.status === 401 &&
+            !isAuthRequest &&
             !originalRequest._retry
         ) {
 
@@ -59,14 +64,19 @@ api.interceptors.response.use(
 
             try {
 
-                const response =
-                    await axios.post(
+                if (!refreshRequest) {
+                    refreshRequest = axios.post(
                         `${import.meta.env.VITE_API_URL}/auth/refresh-token`,
                         {},
                         {
                             withCredentials: true
                         }
-                    );
+                    ).finally(() => {
+                        refreshRequest = null;
+                    });
+                }
+
+                const response = await refreshRequest;
 
 
                 const newAccessToken =
@@ -89,6 +99,17 @@ api.interceptors.response.use(
 
 
             } catch (refreshError) {
+
+                localStorage.removeItem(
+                    "accessToken"
+                );
+
+                if (
+                    window.location.pathname !==
+                    "/login"
+                ) {
+                    window.location.assign("/login");
+                }
 
                 return Promise.reject(
                     refreshError

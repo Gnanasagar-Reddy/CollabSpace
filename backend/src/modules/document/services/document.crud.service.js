@@ -258,6 +258,7 @@ const updateDocument = async (
         document.content = validateContent(
             updateData.content
         );
+        document.yjsState = "";
     }
 
     await document.save();

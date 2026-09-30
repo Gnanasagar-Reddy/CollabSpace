@@ -6,8 +6,7 @@ const connectDb = require("./config/db");
 
 const {
     connectRedis,
-    redisClient,
-    redisSubscriber
+    closeRedis
 } = require("./config/redis");
 
 
@@ -45,22 +44,9 @@ const shutdown = async (signal) => {
         }
 
 
-        if (redisClient.isOpen) {
-            await redisClient.quit();
+        await closeRedis();
 
-            console.log(
-                "Redis client closed"
-            );
-        }
-
-
-        if (redisSubscriber.isOpen) {
-            await redisSubscriber.quit();
-
-            console.log(
-                "Redis subscriber closed"
-            );
-        }
+        console.log("Redis clients closed");
 
 
         if (mongoose.connection.readyState !== 0) {

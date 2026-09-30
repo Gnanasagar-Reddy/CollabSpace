@@ -3,27 +3,27 @@ require("dotenv").config();
 const http = require("http");
 const mongoose = require("mongoose");
 
-const app = require("./app");
-
 const connectDb = require("./config/db");
 const {
     connectRedis,
-    redisClient,
-    redisSubscriber
+    closeRedis
 } = require("./config/redis");
 
 const initializeSocket = require("./socket/socket");
 
-const server = http.createServer(app);
-
 const PORT = process.env.PORT || 5000;
 
+let server;
 let io;
 
 const startServer = async () => {
 
     await connectDb();
     await connectRedis();
+
+    const app = require("./app");
+
+    server = http.createServer(app);
 
     io = initializeSocket(server);
 
@@ -49,14 +49,6 @@ const shutdown = async (signal) => {
 
     try {
 
-        // Stop accepting new connections
-        server.close(() => {
-            console.log(
-                "HTTP server closed"
-            );
-        });
-
-
         // Close Socket.IO connections
         if (io) {
             await io.close();
@@ -67,22 +59,25 @@ const shutdown = async (signal) => {
         }
 
 
+        if (server) {
+            await new Promise((resolve, reject) => {
+                server.close((error) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+
+                    console.log("HTTP server closed");
+                    resolve();
+                });
+            });
+        }
+
+
         // Close Redis connections
-        if (redisClient.isOpen) {
-            await redisClient.quit();
+        await closeRedis();
 
-            console.log(
-                "Redis client closed"
-            );
-        }
-
-        if (redisSubscriber.isOpen) {
-            await redisSubscriber.quit();
-
-            console.log(
-                "Redis subscriber closed"
-            );
-        }
+        console.log("Redis clients closed");
 
 
         // Close MongoDB connection

@@ -16,8 +16,8 @@ function ExitConfirmModal({
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-gray-500">
-                    You have changes that may not be saved yet.
-                    What would you like to do?
+                    Your edits sync automatically for everyone.
+                    You can leave safely at any time.
                 </p>
 
                 <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
@@ -34,9 +34,9 @@ function ExitConfirmModal({
                         type="button"
                         onClick={onExitWithoutSaving}
                         disabled={saving}
-                        className="h-10 rounded-lg px-4 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="h-10 rounded-lg px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        Exit without saving
+                        Exit
                     </button>
 
                     <button

@@ -1,6 +1,11 @@
-import { useEffect, useRef } from "react";
+import {
+    useEffect,
+    useMemo,
+    useRef
+} from "react";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Collaboration from "@tiptap/extension-collaboration";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Highlight from "@tiptap/extension-highlight";
@@ -9,24 +14,56 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-text-style";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
-import socket from "../../socket/socket";
+import { HocuspocusProvider } from "@hocuspocus/provider";
+import * as Y from "yjs";
 import EditorToolbar from "./EditorToolbar";
 import EditorContentArea from "./EditorContentArea";
 
 function CollaborationEditor({
     documentId,
-    content,
-    userRole
+    userRole,
+    onSaveReady,
+    collaborationVersion = 0
 }) {
-    const isReceivingUpdate =
-        useRef(false);
+    const ydoc = useMemo(
+        () => new Y.Doc(),
+        [documentId]
+    );
 
-    const updateTimeout =
-        useRef(null);
+    const teardownTimers = useRef(
+        new Map()
+    );
+
+    const provider = useMemo(
+        () => new HocuspocusProvider({
+            url:
+                import.meta.env.VITE_COLLABORATION_URL ||
+                "ws://localhost:1234",
+            name:
+                `document_${documentId}_v` +
+                collaborationVersion,
+            document: ydoc,
+            token: () =>
+                localStorage.getItem("accessToken")
+        }),
+        [
+            documentId,
+            ydoc,
+            collaborationVersion
+        ]
+    );
 
     const editor = useEditor({
         extensions: [
-            StarterKit,
+            StarterKit.configure({
+                link: false,
+                underline: false,
+                undoRedo: false
+            }),
+
+            Collaboration.configure({
+                document: ydoc
+            }),
 
             Underline,
 
@@ -58,8 +95,6 @@ function CollaborationEditor({
             })
         ],
 
-        content: content || "",
-
         immediatelyRender: false,
 
         editable:
@@ -69,33 +104,6 @@ function CollaborationEditor({
             attributes: {
                 class: "tiptap-editor"
             }
-        },
-
-        onUpdate: ({ editor }) => {
-            if (
-                isReceivingUpdate.current ||
-                userRole === "viewer"
-            ) {
-                return;
-            }
-
-            if (updateTimeout.current) {
-                clearTimeout(
-                    updateTimeout.current
-                );
-            }
-
-            updateTimeout.current =
-                setTimeout(() => {
-                    socket.emit(
-                        "document-change",
-                        {
-                            documentId,
-                            content:
-                                editor.getHTML()
-                        }
-                    );
-                }, 50);
         }
     });
 
@@ -113,83 +121,49 @@ function CollaborationEditor({
     ]);
 
     useEffect(() => {
-        if (!editor) {
-            return;
-        }
+        const flushCollaborationSave = async () => {
+            provider.forceSync();
 
-        const nextContent = content || "";
+            await new Promise((resolve) => {
+                setTimeout(resolve, 350);
+            });
+        };
 
-        if (editor.getHTML() === nextContent) {
-            return;
-        }
+        onSaveReady(flushCollaborationSave);
 
-        isReceivingUpdate.current = true;
-
-        editor.commands.setContent(
-            nextContent,
-            false
-        );
-
-        isReceivingUpdate.current = false;
+        return () => {
+            onSaveReady(null);
+        };
     }, [
-        editor,
-        content
+        onSaveReady,
+        provider
     ]);
 
     useEffect(() => {
-        if (!editor) {
-            return;
+        const pendingTeardown =
+            teardownTimers.current.get(provider);
+
+        if (pendingTeardown) {
+            clearTimeout(pendingTeardown);
+            teardownTimers.current.delete(provider);
         }
 
-        const handleDocumentUpdate =
-            (data) => {
-                if (
-                    data.documentId &&
-                    data.documentId !==
-                    documentId
-                ) {
-                    return;
-                }
-
-                isReceivingUpdate.current =
-                    true;
-
-                editor.commands.setContent(
-                    data.content || "",
-                    false
-                );
-
-                isReceivingUpdate.current =
-                    false;
-            };
-
-        socket.on(
-            "document-update",
-            handleDocumentUpdate
-        );
-
         return () => {
-            socket.off(
-                "document-update",
-                handleDocumentUpdate
+            const teardownTimer = setTimeout(() => {
+                provider.destroy();
+                ydoc.destroy();
+                teardownTimers.current.delete(provider);
+            }, 0);
+
+            teardownTimers.current.set(
+                provider,
+                teardownTimer
             );
         };
     }, [
-        editor,
-        documentId
+        provider,
+        ydoc
     ]);
-
-    useEffect(() => {
-        return () => {
-            if (updateTimeout.current) {
-                clearTimeout(
-                    updateTimeout.current
-                );
-            }
-
-            editor?.destroy();
-        };
-    }, [editor]);
 
     if (!editor) {
         return (
