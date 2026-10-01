@@ -1,6 +1,7 @@
 const DocumentVersion = require("../document.version.model");
 const Document = require("../document.model");
 const ApiError = require("../../../utils/ApiError");
+const { getDocumentAccess } = require("../document.access");
 
 const getDocumentVersions = async (
     documentId,
@@ -16,25 +17,16 @@ const getDocumentVersions = async (
         );
     }
 
-    const isOwner =
-        document.owner.toString() ===
-        userId.toString();
+    const { hasAccess } = getDocumentAccess(document, userId);
 
-    const isCollaborator =
-        document.collaborators.some(
-            (item) =>
-                item.user.toString() ===
-                userId.toString()
-        );
-
-    if (!isOwner && !isCollaborator) {
+    if (!hasAccess) {
         throw new ApiError(
             403,
             "You do not have access to this document"
         );
     }
 
-    return DocumentVersion
+    const versions = await DocumentVersion
         .find({
             document: documentId
         })
@@ -46,6 +38,13 @@ const getDocumentVersions = async (
             version: -1
         })
         .lean();
+
+    // Number the retained history oldest-to-newest, independently of the
+    // database sequence used to order saves and enforce uniqueness.
+    return versions.map((version, index) => ({
+        ...version,
+        version: versions.length - index
+    }));
 };
 
 module.exports = {

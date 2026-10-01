@@ -14,6 +14,12 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-text-style";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
+import Placeholder from "@tiptap/extension-placeholder";
+import CharacterCount from "@tiptap/extension-character-count";
+import { Table } from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableHeader from "@tiptap/extension-table-header";
+import TableCell from "@tiptap/extension-table-cell";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import * as Y from "yjs";
 import EditorToolbar from "./EditorToolbar";
@@ -92,7 +98,23 @@ function CollaborationEditor({
 
             TaskItem.configure({
                 nested: true
-            })
+            }),
+
+            Placeholder.configure({
+                placeholder: "Start writing, or choose a tool above…"
+            }),
+
+            CharacterCount.configure({
+                limit: 200000
+            }),
+
+            Table.configure({
+                resizable: true
+            }),
+
+            TableRow,
+            TableHeader,
+            TableCell
         ],
 
         immediatelyRender: false,
@@ -180,6 +202,7 @@ function CollaborationEditor({
             <div className="sticky top-16 z-20">
                 <EditorToolbar
                     editor={editor}
+                    userRole={userRole}
                 />
             </div>
 

@@ -30,46 +30,6 @@ const removeUserFromDocument = async (
 };
 
 
-const getDocumentUsers = async (
-    documentId
-) => {
-
-    const connections =
-        await redisClient.hGetAll(
-            `document:${documentId}:presence`
-        );
-
-
-    const userIds =
-        [...new Set(
-            Object.values(connections)
-        )];
-
-
-    if (userIds.length === 0) {
-        return [];
-    }
-
-
-    const users = await User.find({
-        _id: {
-            $in: userIds
-        }
-    }).select(
-        "_id name email"
-    );
-
-
-    return users.map(
-        (user) => ({
-            id: user._id.toString(),
-            name: user.name,
-            email: user.email
-        })
-    );
-
-};
-
 const getUsersByIds = async (userIds) => {
     if (userIds.length === 0) {
         return [];
@@ -96,6 +56,5 @@ const getUsersByIds = async (userIds) => {
 module.exports = {
     addUserToDocument,
     removeUserFromDocument,
-    getDocumentUsers,
     getUsersByIds
 };

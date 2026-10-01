@@ -1,3 +1,4 @@
+const asyncHandler = require("../../utils/asyncHandler");
 const authService = require("./auth.service");
 const sendResponse = require("../../utils/apiResponse");
 
@@ -18,125 +19,103 @@ const refreshTokenCookieOptions = {
     path: "/api/auth"
 };
 
-const register = async (req, res, next) => {
-    try {
-        const user = await authService.registerUser(req.body);
-        sendResponse(
-            res,
-            201,
-            {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                avatar: user.avatar
-            },
-            "User registered successfully"
-        );
-    } catch (error) {
-        next(error);
+const register = asyncHandler(async (req, res) => {
+    const user = await authService.registerUser(req.body);
+    sendResponse(
+        res,
+        201,
+        {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            avatar: user.avatar
+        },
+        "User registered successfully"
+    );
+});
+const login = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
 
-    }
-};
-const login = async (req, res, next) => {
-
-    try {
-
-        const { email, password } = req.body;
-
-
-        const { user, accessToken, refreshToken } =
-            await authService.loginUser(
-                email,
-                password
-            );
-
-        res.cookie(
-            "refreshToken",
-            refreshToken,
-            {
-                ...refreshTokenCookieOptions,
-                maxAge: REFRESH_TOKEN_MAX_AGE
-            }
+    const { user, accessToken, refreshToken } =
+        await authService.loginUser(
+            email,
+            password
         );
 
-
-        sendResponse(
-            res,
-            200,
-            {
-                user:{
-                    id:user._id,
-                    name:user.name,
-                    email:user.email
-                },
-                accessToken
-            },
-            "Login successful"
-        );
-
-    } catch(error) {
-        next(error);
-    }
-};
-
-const logout = async (req, res, next) => {
-    try {
-        const refreshToken =
-            req.cookies.refreshToken;
-
-        if (refreshToken) {
-            await authService.logoutUser(
-                refreshToken
-            );
+    res.cookie(
+        "refreshToken",
+        refreshToken,
+        {
+            ...refreshTokenCookieOptions,
+            maxAge: REFRESH_TOKEN_MAX_AGE
         }
+    );
 
-        res.clearCookie(
-            "refreshToken",
-            refreshTokenCookieOptions
-        );
-        sendResponse(
-            res,
-            200,
-            null,
-            "Logged out successfully"
-        );
-    } catch (error) {
-        next(error);
-    }
-};
-
-const refreshToken = async (req, res, next) => {
-    try {
-        const token =
-            req.cookies.refreshToken;
-        const {
-            accessToken,
-            refreshToken
-        } =
-            await authService.refreshAccessToken(
-                token
-            );
-
-        res.cookie(
-            "refreshToken",
-            refreshToken,
-            {
-                ...refreshTokenCookieOptions,
-                maxAge: REFRESH_TOKEN_MAX_AGE
-            }
-        );
-        sendResponse(
-            res,
-            200,
-            {
-                accessToken
+    sendResponse(
+        res,
+        200,
+        {
+            user:{
+                id:user._id,
+                name:user.name,
+                email:user.email
             },
-            "Token refreshed"
+            accessToken
+        },
+        "Login successful"
+    );
+});
+
+const logout = asyncHandler(async (req, res) => {
+    const refreshToken =
+        req.cookies.refreshToken;
+
+    if (refreshToken) {
+        await authService.logoutUser(
+            refreshToken
         );
-    } catch (error) {
-        next(error);
     }
-};
+
+    res.clearCookie(
+        "refreshToken",
+        refreshTokenCookieOptions
+    );
+    sendResponse(
+        res,
+        200,
+        null,
+        "Logged out successfully"
+    );
+});
+
+const refreshToken = asyncHandler(async (req, res) => {
+    const token =
+        req.cookies.refreshToken;
+    const {
+        accessToken,
+        refreshToken
+    } =
+        await authService.refreshAccessToken(
+            token
+        );
+
+    res.cookie(
+        "refreshToken",
+        refreshToken,
+        {
+            ...refreshTokenCookieOptions,
+            maxAge: REFRESH_TOKEN_MAX_AGE
+        }
+    );
+    sendResponse(
+        res,
+        200,
+        {
+            accessToken
+        },
+        "Token refreshed"
+    );
+});
 module.exports = {
     register,
     login,

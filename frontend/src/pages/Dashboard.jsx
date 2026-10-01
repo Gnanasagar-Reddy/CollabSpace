@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 import { AuthContext } from "../context/AuthContext";
+import { getUserProfile } from "../utils/userProfile";
 
 import useDashboard from "../hooks/useDashboard";
 import useCollaborationRequests from "../hooks/useCollaborationRequests";
@@ -24,8 +25,11 @@ function Dashboard() {
     const navigate = useNavigate();
 
     const {
+        user,
         logout
     } = useContext(AuthContext);
+
+    const { name: userName } = getUserProfile(user);
 
 
     const {
@@ -69,69 +73,23 @@ function Dashboard() {
     };
 
 
-    const acceptRequest = async (
-        requestId
-    ) => {
-
+    const respondToRequest = async (requestId, action) => {
         try {
-
             await api.patch(
-                `/documents/share-requests/${requestId}/accept`
+                "/documents/share-requests/" + requestId + "/" + action
             );
-
             await fetchRequests();
-
             return true;
-
         } catch (error) {
-
-            console.log(
-                "Accept request error:",
-                error.response?.data ||
-                error
-            );
-
-            alert(
-                error.response?.data?.message ||
-                "Failed to accept request"
-            );
-
+            const actionLabel = action.charAt(0).toUpperCase() + action.slice(1);
+            console.log(actionLabel + " request error:", error.response?.data || error);
+            alert(error.response?.data?.message || "Failed to " + action + " request");
             return false;
         }
     };
 
-
-    const rejectRequest = async (
-        requestId
-    ) => {
-
-        try {
-
-            await api.patch(
-                `/documents/share-requests/${requestId}/reject`
-            );
-
-            await fetchRequests();
-
-            return true;
-
-        } catch (error) {
-
-            console.log(
-                "Reject request error:",
-                error.response?.data ||
-                error
-            );
-
-            alert(
-                error.response?.data?.message ||
-                "Failed to reject request"
-            );
-
-            return false;
-        }
-    };
-
+    const acceptRequest = (requestId) => respondToRequest(requestId, "accept");
+    const rejectRequest = (requestId) => respondToRequest(requestId, "reject");
 
     /*
      * CREATE DOCUMENT
@@ -344,6 +302,7 @@ function Dashboard() {
             {/* HEADER */}
 
             <DashboardHeader
+                user={user}
 
                 onCreate={() =>
                     setShowCreate(true)
@@ -403,7 +362,7 @@ function Dashboard() {
                             Good evening,
 
                             <span className="ml-2 text-indigo-600 dark:text-indigo-400">
-                                Sagar
+                                {userName}
                             </span>
 
                         </h1>

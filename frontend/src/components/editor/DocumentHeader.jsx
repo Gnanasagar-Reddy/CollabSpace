@@ -4,6 +4,7 @@ import {
     useState
 } from "react";
 import { AuthContext } from "../../context/AuthContext";
+import { getUserProfile } from "../../utils/userProfile";
 
 function DocumentHeader({
     title,
@@ -62,23 +63,7 @@ function DocumentHeader({
         cancelRename
     ]);
 
-    /*
-     * Get the actual logged-in user's name
-     *
-     * Depending on your backend response,
-     * the name may be in user.name or user.username.
-     */
-    const userName =
-        user?.name ||
-        user?.username ||
-        user?.email ||
-        "User";
-
-    const userInitial =
-        userName
-            .trim()
-            .charAt(0)
-            .toUpperCase();
+    const { name: userName, initial: userInitial } = getUserProfile(user);
 
     /*
      * Close profile menu when clicking anywhere

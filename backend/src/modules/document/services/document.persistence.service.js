@@ -3,6 +3,7 @@ const DocumentVersion = require(
     "../document.version.model"
 );
 const ApiError = require("../../../utils/ApiError");
+const { getDocumentAccess } = require("../document.access");
 
 const {
     redisClient
@@ -22,22 +23,9 @@ const checkEditPermission = (
     action = "save"
 ) => {
 
-    const isOwner =
-        document.owner.toString() ===
-        userId.toString();
+    const { canEdit } = getDocumentAccess(document, userId);
 
-    const collaborator =
-        document.collaborators.find(
-            (item) =>
-                item.user.toString() ===
-                userId.toString()
-        );
-
-    const isEditor =
-        collaborator &&
-        collaborator.role === "editor";
-
-    if (!isOwner && !isEditor) {
+    if (!canEdit) {
         throw new ApiError(
             403,
             `You do not have permission to ${action} this document`

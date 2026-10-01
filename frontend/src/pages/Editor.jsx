@@ -210,44 +210,6 @@ function Editor() {
         navigate("/dashboard");
     };
 
-    const saveAndExit = async () => {
-        if (saving) {
-            return;
-        }
-
-        try {
-            setSaving(true);
-
-            await collaborationSaveRef.current?.();
-
-            await api.post(
-                `/documents/${documentId}/save`
-            );
-
-            navigate(
-                "/dashboard",
-                {
-                    state: {
-                        message:
-                            "Document saved successfully"
-                    }
-                }
-            );
-        } catch (error) {
-            console.log(
-                error.response?.data ||
-                error
-            );
-
-            alert(
-                error.response?.data?.message ||
-                "Failed to save document"
-            );
-        } finally {
-            setSaving(false);
-        }
-    };
-
     if (loading || !document) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
@@ -415,11 +377,6 @@ function Editor() {
                                     collaborators
                                 }
                                 onUpdate={reload}
-                                onClose={() =>
-                                    setShowCollaborators(
-                                        false
-                                    )
-                                }
                             />
 
                             <button
@@ -445,7 +402,7 @@ function Editor() {
             {showExitModal && (
                 <ExitConfirmModal
                     onSaveAndExit={
-                        saveAndExit
+                        saveDocument
                     }
                     onExitWithoutSaving={
                         exitWithoutSaving

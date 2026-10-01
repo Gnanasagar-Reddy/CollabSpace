@@ -1,7 +1,9 @@
 import { useState } from "react";
 import ThemeToggle from "../common/ThemeToggle";
+import { DashboardNavigation, DashboardSidebarFooter } from "./DashboardSidebarContent";
 
 function DashboardHeader({
+    user,
     onCreate,
     onLogout,
     onOverview,
@@ -13,15 +15,6 @@ function DashboardHeader({
 }) {
     const [sidebarOpen, setSidebarOpen] =
         useState(false);
-
-    const getNavClass = (view) => {
-
-        if (activeView === view) {
-            return "flex w-full items-center gap-3 rounded-lg bg-indigo-50 px-3 py-2.5 text-sm font-semibold text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400";
-        }
-
-        return "mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white";
-    };
 
     const handleNavigation = (callback) => {
         callback();
@@ -53,125 +46,17 @@ function DashboardHeader({
 
                 {/* NAVIGATION */}
 
-                <nav className="flex-1 px-3 py-6">
-
-                    <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                        Workspace
-                    </p>
-
-
-                    <button
-                        type="button"
-                        onClick={onOverview}
-                        className={getNavClass("all")}
-                    >
-                        <span>▣</span>
-
-                        Overview
-                    </button>
-
-
-                    <button
-                        type="button"
-                        onClick={onMyDocuments}
-                        className={getNavClass("owned")}
-                    >
-                        <span>◫</span>
-
-                        My Documents
-                    </button>
-
-
-                    <button
-                        type="button"
-                        onClick={onSharedDocuments}
-                        className={getNavClass("shared")}
-                    >
-                        <span>👥</span>
-
-                        Shared with me
-                    </button>
-
-
-                    <p className="mb-3 mt-8 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                        Activity
-                    </p>
-
-
-                    <button
-                        type="button"
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-                    >
-                        <span>◷</span>
-
-                        Recent
-                    </button>
-
-
-                    <button
-                        type="button"
-                        className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-                    >
-                        <span>★</span>
-
-                        Starred
-                    </button>
-
-                </nav>
+                <DashboardNavigation
+                    activeView={activeView}
+                    onOverview={onOverview}
+                    onMyDocuments={onMyDocuments}
+                    onSharedDocuments={onSharedDocuments}
+                />
 
 
                 {/* SIDEBAR BOTTOM */}
 
-                <div className="border-t border-gray-100 p-3 dark:border-gray-800">
-
-                    <div className="flex items-center gap-2">
-
-                        <button
-                            type="button"
-                            className="flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-                        >
-                            <span>⚙</span>
-
-                            Settings
-                        </button>
-
-
-                        <ThemeToggle />
-
-                    </div>
-
-
-                    <div className="mt-2 flex items-center gap-3 rounded-xl bg-gray-50 p-3 dark:bg-gray-900">
-
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400">
-                            S
-                        </div>
-
-
-                        <div className="min-w-0 flex-1">
-
-                            <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                                Sagar
-                            </p>
-
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Workspace member
-                            </p>
-
-                        </div>
-
-
-                        <button
-                            type="button"
-                            onClick={onLogout}
-                            className="rounded-md px-2 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
-                        >
-                            Logout
-                        </button>
-
-                    </div>
-
-                </div>
+                <DashboardSidebarFooter user={user} onLogout={onLogout} />
 
             </aside>
 
@@ -406,10 +291,14 @@ function DashboardHeader({
 
                 {/* NAVIGATION */}
 
-                <nav className="flex-1 px-3 py-6">
-
-                    {/* NEW DOCUMENT */}
-
+                <DashboardNavigation
+                    activeView={activeView}
+                    onOverview={onOverview}
+                    onMyDocuments={onMyDocuments}
+                    onSharedDocuments={onSharedDocuments}
+                    onNavigate={handleNavigation}
+                    showActivity={false}
+                >
                     <button
                         type="button"
                         onClick={() =>
@@ -427,137 +316,12 @@ function DashboardHeader({
                         New document
 
                     </button>
-
-
-                    <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                        Workspace
-                    </p>
-
-
-                    <button
-                        type="button"
-                        onClick={() =>
-                            handleNavigation(
-                                onOverview
-                            )
-                        }
-                        className={getNavClass("all")}
-                    >
-                        <span>▣</span>
-
-                        Overview
-                    </button>
-
-
-                    <button
-                        type="button"
-                        onClick={() =>
-                            handleNavigation(
-                                onMyDocuments
-                            )
-                        }
-                        className={getNavClass("owned")}
-                    >
-                        <span>◫</span>
-
-                        My Documents
-                    </button>
-
-
-                    <button
-                        type="button"
-                        onClick={() =>
-                            handleNavigation(
-                                onSharedDocuments
-                            )
-                        }
-                        className={getNavClass("shared")}
-                    >
-                        <span>👥</span>
-
-                        Shared with me
-                    </button>
-
-
-                    <p className="mb-3 mt-8 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                        Activity
-                    </p>
-
-
-                    <button
-                        type="button"
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-                    >
-                        <span>◷</span>
-
-                        Recent
-                    </button>
-
-
-                    <button
-                        type="button"
-                        className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-                    >
-                        <span>★</span>
-
-                        Starred
-                    </button>
-
-                </nav>
+                </DashboardNavigation>
 
 
                 {/* MOBILE SIDEBAR BOTTOM */}
 
-                <div className="border-t border-gray-100 p-3 dark:border-gray-800">
-
-                    <div className="flex items-center gap-2">
-
-                        <button
-                            type="button"
-                            className="flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-                        >
-                            <span>⚙</span>
-
-                            Settings
-                        </button>
-
-
-                        <ThemeToggle />
-
-                    </div>
-
-
-                    <div className="mt-2 flex items-center gap-3 rounded-xl bg-gray-50 p-3 dark:bg-gray-900">
-
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400">
-                            S
-                        </div>
-
-
-                        <div className="min-w-0 flex-1">
-
-                            <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                                Sagar
-                            </p>
-
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Workspace member
-                            </p>
-
-                        </div>
-
-
-                        <button
-                            type="button"
-                            onClick={onLogout}
-                            className="text-xs font-semibold text-red-500 transition hover:text-red-600"
-                        >
-                            Logout
-                        </button>
-
-                    </div>
-
-                </div>
+                <DashboardSidebarFooter user={user} onLogout={onLogout} mobile />
 
             </aside>
         </>

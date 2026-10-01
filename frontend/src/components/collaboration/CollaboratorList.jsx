@@ -4,8 +4,7 @@ import api from "../../services/api";
 function CollaboratorList({
     documentId,
     collaborators = [],
-    onUpdate,
-    onClose
+    onUpdate
 }) {
     const [message, setMessage] =
         useState("");

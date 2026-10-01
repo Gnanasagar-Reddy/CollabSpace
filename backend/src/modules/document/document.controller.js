@@ -1,3 +1,4 @@
+const asyncHandler = require("../../utils/asyncHandler");
 const documentService = require("./document.service");
 const sendResponse = require("../../utils/apiResponse");
 const collaborationRequestService = require("./services/document.collaborationRequest.service");
@@ -5,478 +6,294 @@ const {
     getIo
 } = require("../../socket/socket");
 
-
-
-const createDocument = async (req, res, next) => {
-
-    try {
-
-        const document =
-            await documentService.createDocument(
-                req.user._id,
-                req.body
-            );
-
-
-        sendResponse(
-            res,
-            201,
-            document,
-            "Document created successfully"
+const createDocument = asyncHandler(async (req, res) => {
+    const document =
+        await documentService.createDocument(
+            req.user._id,
+            req.body
         );
 
+    sendResponse(
+        res,
+        201,
+        document,
+        "Document created successfully"
+    );
+});
 
-    } catch (error) {
-
-        next(error);
-
-    }
-
-};
-
-const getUserDocuments = async (req, res, next) => {
-
-    try {
-
-        const documents =
-            await documentService.getUserDocuments(
-                req.user._id
-            );
-
-
-        sendResponse(
-            res,
-            200,
-            documents,
-            "Documents fetched successfully"
+const getUserDocuments = asyncHandler(async (req, res) => {
+    const documents =
+        await documentService.getUserDocuments(
+            req.user._id
         );
 
+    sendResponse(
+        res,
+        200,
+        documents,
+        "Documents fetched successfully"
+    );
+});
 
-    }
-    catch (error) {
-
-        next(error);
-
-    }
-
-};
-
-const getDocumentById = async (req, res, next) => {
-
-    try {
-
-        const document =
-            await documentService.getDocumentById(
-                req.params.id,
-                req.user._id
-            );
-
-
-        sendResponse(
-            res,
-            200,
-            document,
-            "Document fetched successfully"
-        );
-
-
-    }
-    catch (error) {
-
-        next(error);
-
-    }
-
-};
-
-const updateDocument = async (
-    req,
-    res,
-    next
-) => {
-
-    try {
-
-        const document =
-            await documentService.updateDocument(
-
-                req.params.id,
-
-                req.user._id,
-
-                req.body
-
-            );
-
-
-        sendResponse(
-            res,
-            200,
-            document,
-            "Document updated successfully"
-        );
-
-
-    }
-    catch (error) {
-
-        next(error);
-
-    }
-
-};
-
-const deleteDocument = async (
-    req,
-    res,
-    next
-) => {
-
-    try {
-
-        await documentService.deleteDocument(
+const getDocumentById = asyncHandler(async (req, res) => {
+    const document =
+        await documentService.getDocumentById(
             req.params.id,
             req.user._id
         );
 
+    sendResponse(
+        res,
+        200,
+        document,
+        "Document fetched successfully"
+    );
+});
 
-        sendResponse(
-            res,
-            200,
-            null,
-            "Document deleted successfully"
+const updateDocument = asyncHandler(async (req, res) => {
+    const document =
+        await documentService.updateDocument(
+
+            req.params.id,
+
+            req.user._id,
+
+            req.body
+
         );
 
-    }
-    catch (error) {
+    sendResponse(
+        res,
+        200,
+        document,
+        "Document updated successfully"
+    );
+});
 
-        next(error);
+const deleteDocument = asyncHandler(async (req, res) => {
+    await documentService.deleteDocument(
+        req.params.id,
+        req.user._id
+    );
 
-    }
+    sendResponse(
+        res,
+        200,
+        null,
+        "Document deleted successfully"
+    );
+});
 
-};
+const updateCollaboratorRole = asyncHandler(async (req, res) => {
+    const document =
+        await documentService.updateCollaboratorRole(
 
-const updateCollaboratorRole = async (
-    req,
-    res,
-    next
-) => {
+            req.params.id,
 
-    try {
+            req.user._id,
 
-        const document =
-            await documentService.updateCollaboratorRole(
+            req.params.userId,
 
-                req.params.id,
+            req.body.role
 
-                req.user._id,
-
-                req.params.userId,
-
-                req.body.role
-
-            );
-
-
-        sendResponse(
-            res,
-            200,
-            document,
-            "Collaborator role updated"
         );
 
+    sendResponse(
+        res,
+        200,
+        document,
+        "Collaborator role updated"
+    );
+});
 
-    }
-    catch (error) {
+const removeCollaborator = asyncHandler(async (req, res) => {
+    const document =
+        await documentService.removeCollaborator(
 
-        next(error);
+            req.params.id,
 
-    }
+            req.user._id,
 
-};
+            req.params.userId
 
-const removeCollaborator = async (
-    req,
-    res,
-    next
-) => {
-
-    try {
-
-        const document =
-            await documentService.removeCollaborator(
-
-                req.params.id,
-
-                req.user._id,
-
-                req.params.userId
-
-            );
-
-
-        sendResponse(
-            res,
-            200,
-            document,
-            "Collaborator removed"
         );
 
+    sendResponse(
+        res,
+        200,
+        document,
+        "Collaborator removed"
+    );
+});
 
-    }
-    catch (error) {
+const saveDocument = asyncHandler(async (req, res) => {
+    const result =
+        await documentService.saveDocumentNow(
+            req.params.documentId,
+            req.user._id
+        );
 
-        next(error);
+    return res.status(200).json({
+        success: true,
+        message:
+            result.message
+    });
+});
 
-    }
-
-};
-
-const saveDocument = async (
-    req,
-    res,
-    next
-) => {
-    try {
-        const result =
-            await documentService.saveDocumentNow(
+const discardDocumentDraft = asyncHandler(async (req, res) => {
+    const result =
+        await documentService
+            .discardDocumentDraft(
                 req.params.documentId,
                 req.user._id
             );
 
-        return res.status(200).json({
-            success: true,
-            message:
-                result.message
-        });
-    } catch (error) {
-        next(error);
-    }
-};
+    res.status(200).json({
+        success: true,
+        message:
+            result.message
+    });
+});
 
-const discardDocumentDraft = async (
-    req,
-    res,
-    next
-) => {
-    try {
-        const result =
-            await documentService
-                .discardDocumentDraft(
-                    req.params.documentId,
-                    req.user._id
-                );
-
-        res.status(200).json({
-            success: true,
-            message:
-                result.message
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
-const getOwnedDocuments = async (req, res, next) => {
-    try {
-        const documents =
-            await documentService.getOwnedDocuments(
-                req.user._id
-            );
-
-        sendResponse(
-            res,
-            200,
-            documents,
-            "Owned documents fetched successfully"
-        );
-    } catch (error) {
-        next(error);
-    }
-};
-
-const getSharedDocuments = async (req, res, next) => {
-    try {
-        const documents =
-            await documentService.getSharedDocuments(
-                req.user._id
-            );
-
-        sendResponse(
-            res,
-            200,
-            documents,
-            "Shared documents fetched successfully"
-        );
-    } catch (error) {
-        next(error);
-    }
-};
-
-const getDocumentVersions = async (
-    req,
-    res,
-    next
-) => {
-
-    try {
-
-        const versions =
-            await documentService
-                .getDocumentVersions(
-                    req.params.documentId,
-                    req.user._id
-                );
-
-        sendResponse(
-            res,
-            200,
-            versions,
-            "Document versions fetched successfully"
-        );
-
-    } catch (error) {
-
-        next(error);
-
-    }
-};
-
-const restoreDocumentVersion = async (req, res, next) => {
-    try {
-        const result = await documentService.restoreDocumentVersion(
-            req.params.documentId,
-            req.params.versionId,
+const getOwnedDocuments = asyncHandler(async (req, res) => {
+    const documents =
+        await documentService.getOwnedDocuments(
             req.user._id
         );
 
-        const io = getIo();
+    sendResponse(
+        res,
+        200,
+        documents,
+        "Owned documents fetched successfully"
+    );
+});
 
-        if (io) {
-            io.to(
-                `document_${req.params.documentId}`
-            ).emit(
-                "document-restored",
-                {
-                    documentId: req.params.documentId,
-                    collaborationVersion:
-                        result.collaborationVersion
-                }
+const getSharedDocuments = asyncHandler(async (req, res) => {
+    const documents =
+        await documentService.getSharedDocuments(
+            req.user._id
+        );
+
+    sendResponse(
+        res,
+        200,
+        documents,
+        "Shared documents fetched successfully"
+    );
+});
+
+const getDocumentVersions = asyncHandler(async (req, res) => {
+    const versions =
+        await documentService
+            .getDocumentVersions(
+                req.params.documentId,
+                req.user._id
             );
-        }
 
-        sendResponse(
-            res,
-            200,
-            result,
-            "Document version restored successfully"
+    sendResponse(
+        res,
+        200,
+        versions,
+        "Document versions fetched successfully"
+    );
+});
+
+const restoreDocumentVersion = asyncHandler(async (req, res) => {
+    const result = await documentService.restoreDocumentVersion(
+        req.params.documentId,
+        req.params.versionId,
+        req.user._id
+    );
+
+    const io = getIo();
+
+    if (io) {
+        io.to(
+            `document_${req.params.documentId}`
+        ).emit(
+            "document-restored",
+            {
+                documentId: req.params.documentId,
+                collaborationVersion:
+                    result.collaborationVersion
+            }
         );
-    } catch (error) {
-        next(error);
     }
-};
 
-const sendCollaborationRequest = async (
-    req,
-    res,
-    next
-) => {
-    try {
-        const request =
-            await collaborationRequestService
-                .sendCollaborationRequest(
-                    req.params.id,
-                    req.user._id,
-                    req.body.email,
-                    req.body.role,
-                    req.body.message
-                );
+    sendResponse(
+        res,
+        200,
+        result,
+        "Document version restored successfully"
+    );
+});
 
-        sendResponse(
-            res,
-            201,
-            request,
-            "Collaboration request sent successfully"
-        );
-    } catch (error) {
-        next(error);
-    }
-};
+const sendCollaborationRequest = asyncHandler(async (req, res) => {
+    const request =
+        await collaborationRequestService
+            .sendCollaborationRequest(
+                req.params.id,
+                req.user._id,
+                req.body.email,
+                req.body.role,
+                req.body.message
+            );
 
+    sendResponse(
+        res,
+        201,
+        request,
+        "Collaboration request sent successfully"
+    );
+});
 
-const getCollaborationRequests = async (
-    req,
-    res,
-    next
-) => {
-    try {
-        const requests =
-            await collaborationRequestService
-                .getCollaborationRequests(
-                    req.user._id
-                );
+const getCollaborationRequests = asyncHandler(async (req, res) => {
+    const requests =
+        await collaborationRequestService
+            .getCollaborationRequests(
+                req.user._id
+            );
 
-        sendResponse(
-            res,
-            200,
-            requests,
-            "Collaboration requests fetched successfully"
-        );
-    } catch (error) {
-        next(error);
-    }
-};
+    sendResponse(
+        res,
+        200,
+        requests,
+        "Collaboration requests fetched successfully"
+    );
+});
 
+const acceptCollaborationRequest = asyncHandler(async (req, res) => {
+    const document =
+        await collaborationRequestService
+            .acceptCollaborationRequest(
+                req.params.requestId,
+                req.user._id
+            );
 
-const acceptCollaborationRequest = async (
-    req,
-    res,
-    next
-) => {
-    try {
-        const document =
-            await collaborationRequestService
-                .acceptCollaborationRequest(
-                    req.params.requestId,
-                    req.user._id
-                );
+    sendResponse(
+        res,
+        200,
+        document,
+        "Collaboration request accepted"
+    );
+});
 
-        sendResponse(
-            res,
-            200,
-            document,
-            "Collaboration request accepted"
-        );
-    } catch (error) {
-        next(error);
-    }
-};
+const rejectCollaborationRequest = asyncHandler(async (req, res) => {
+    const request =
+        await collaborationRequestService
+            .rejectCollaborationRequest(
+                req.params.requestId,
+                req.user._id
+            );
 
-
-const rejectCollaborationRequest = async (
-    req,
-    res,
-    next
-) => {
-    try {
-        const request =
-            await collaborationRequestService
-                .rejectCollaborationRequest(
-                    req.params.requestId,
-                    req.user._id
-                );
-
-        sendResponse(
-            res,
-            200,
-            request,
-            "Collaboration request rejected"
-        );
-    } catch (error) {
-        next(error);
-    }
-};
-
+    sendResponse(
+        res,
+        200,
+        request,
+        "Collaboration request rejected"
+    );
+});
 
 module.exports = {
     createDocument,

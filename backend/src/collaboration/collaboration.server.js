@@ -30,8 +30,18 @@ const TaskList =
     require("@tiptap/extension-task-list").default;
 const TaskItem =
     require("@tiptap/extension-task-item").default;
+const {
+    Table
+} = require("@tiptap/extension-table");
+const TableRow =
+    require("@tiptap/extension-table-row").default;
+const TableHeader =
+    require("@tiptap/extension-table-header").default;
+const TableCell =
+    require("@tiptap/extension-table-cell").default;
 const User = require("../modules/auth/user.model");
 const Document = require("../modules/document/document.model");
+const { getDocumentAccess } = require("../modules/document/document.access");
 
 const COLLABORATION_PORT =
     process.env.COLLABORATION_PORT || 1234;
@@ -61,7 +71,13 @@ const editorExtensions = [
     TaskList,
     TaskItem.configure({
         nested: true
-    })
+    }),
+    Table.configure({
+        resizable: false
+    }),
+    TableRow,
+    TableHeader,
+    TableCell
 ];
 
 const getDocumentId = (documentName) => {
@@ -135,29 +151,13 @@ const collaborationServer = new Server({
             );
         }
 
-        const isOwner =
-            document.owner.toString() ===
-            user._id.toString();
+        const { hasAccess, role } = getDocumentAccess(document, user._id);
 
-        const collaborator =
-            document.collaborators.find(
-                (item) =>
-                    item.user.toString() ===
-                    user._id.toString()
-            );
-
-        if (
-            !isOwner &&
-            !collaborator
-        ) {
+        if (!hasAccess) {
             throw new Error(
                 "You do not have access to this document"
             );
         }
-
-        const role = isOwner
-            ? "owner"
-            : collaborator.role;
 
         if (role === "viewer") {
             connection.readOnly = true;

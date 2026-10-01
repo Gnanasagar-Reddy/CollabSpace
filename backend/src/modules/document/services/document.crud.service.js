@@ -6,6 +6,7 @@ const CollaborationRequest = require(
     "../collaborationRequest.model"
 );
 const ApiError = require("../../../utils/ApiError");
+const { getDocumentAccess } = require("../document.access");
 const { redisClient } =
     require("../../../config/redis");
 const {
@@ -134,40 +135,13 @@ const getDocumentById = async (
         );
     }
 
-    const isOwner =
-        document.owner.toString() ===
-        userId.toString();
+    const { hasAccess, role } = getDocumentAccess(document, userId);
 
-    const isCollaborator =
-        document.collaborators.some(
-            (collaborator) =>
-                collaborator.user._id.toString() ===
-                userId.toString()
-        );
-
-    if (
-        !isOwner &&
-        !isCollaborator
-    ) {
+    if (!hasAccess) {
         throw new ApiError(
             403,
             "You do not have access to this document"
         );
-    }
-
-    let role;
-
-    if (isOwner) {
-        role = "owner";
-    } else {
-        const collaborator =
-            document.collaborators.find(
-                (item) =>
-                    item.user._id.toString() ===
-                    userId.toString()
-            );
-
-        role = collaborator.role;
     }
 
     const redisKey =
@@ -217,23 +191,7 @@ const updateDocument = async (
         );
     }
 
-    const isOwner =
-        document.owner.toString() ===
-        userId.toString();
-
-    const collaborator =
-        document.collaborators.find(
-            (item) =>
-                item.user.toString() ===
-                userId.toString()
-        );
-
-    const canEdit =
-        isOwner ||
-        (
-            collaborator &&
-            collaborator.role === "editor"
-        );
+    const { canEdit } = getDocumentAccess(document, userId);
 
     if (!canEdit) {
         throw new ApiError(

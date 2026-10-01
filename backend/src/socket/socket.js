@@ -2,6 +2,7 @@ const { Server } = require("socket.io");
 const { createAdapter } = require("@socket.io/redis-adapter");
 const { redisClient, socketPublisher, socketSubscriber } = require("../config/redis");
 const Document = require("../modules/document/document.model");
+const { getDocumentAccess } = require("../modules/document/document.access");
 const socketAuth = require("./socket.middleware");
 const {
     addDocumentSaveJob
@@ -84,12 +85,7 @@ const initializeSocket = (server) => {
                     );
                 }
 
-                const hasAccess =
-                    document.owner.toString() === socket.user.toString() ||
-                    document.collaborators.some(
-                        (collaborator) =>
-                            collaborator.user.toString() === socket.user.toString()
-                    );
+                const { hasAccess } = getDocumentAccess(document, socket.user);
 
                 if (!hasAccess) {
                     return socket.emit(
@@ -221,18 +217,8 @@ const initializeSocket = (server) => {
                     );
                 }
 
-                const isOwner =
-                    document.owner.toString() === socket.user.toString();
-
-                const collaborator =
-                    document.collaborators.find(
-                        (item) =>
-                            item.user.toString() === socket.user.toString()
-                    );
-
-                const isEditor =
-                    collaborator &&
-                    collaborator.role === "editor";
+                const { isOwner, collaborator, isEditor, canEdit } =
+                    getDocumentAccess(document, socket.user);
 
                 console.log({
                     socketUser: socket.user,
@@ -242,7 +228,7 @@ const initializeSocket = (server) => {
                     isEditor
                 });
 
-                if (!isOwner && !isEditor) {
+                if (!canEdit) {
 
                     return socket.emit(
                         "socket-error",

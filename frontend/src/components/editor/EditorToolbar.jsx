@@ -1,563 +1,138 @@
 import { useEffect, useState } from "react";
 
-function EditorToolbar({ editor }) {
+const TEXT_COLORS = ["#111827", "#475569", "#4f46e5", "#0f766e", "#b45309", "#be123c", "#7e22ce", "#2563eb"];
+const HIGHLIGHT_COLORS = ["#fef08a", "#bbf7d0", "#bae6fd", "#ddd6fe", "#fecdd3", "#fed7aa"];
+
+function ToolButton({ active = false, children, className = "", ...props }) {
+    return <button type="button" className={["editor-tool", active && "editor-tool-active", className].filter(Boolean).join(" ")} {...props}>{children}</button>;
+}
+
+function ToolDivider() {
+    return <span className="editor-tool-divider" aria-hidden="true" />;
+}
+
+function EditorToolbar({ editor, userRole }) {
     const [, forceUpdate] = useState(0);
+    const [colorMenuOpen, setColorMenuOpen] = useState(false);
+    const [highlightMenuOpen, setHighlightMenuOpen] = useState(false);
+    const [linkMenuOpen, setLinkMenuOpen] = useState(false);
+    const [linkUrl, setLinkUrl] = useState("");
 
     useEffect(() => {
-        if (!editor) {
-            return;
-        }
-
-        const updateToolbar = () => {
-            forceUpdate((value) => value + 1);
-        };
-
-        editor.on("transaction", updateToolbar);
-        editor.on("selectionUpdate", updateToolbar);
-
+        if (!editor) return undefined;
+        const refresh = () => forceUpdate((value) => value + 1);
+        editor.on("transaction", refresh);
+        editor.on("selectionUpdate", refresh);
+        editor.on("update", refresh);
         return () => {
-            editor.off("transaction", updateToolbar);
-            editor.off("selectionUpdate", updateToolbar);
+            editor.off("transaction", refresh);
+            editor.off("selectionUpdate", refresh);
+            editor.off("update", refresh);
         };
     }, [editor]);
 
-    if (!editor) {
-        return null;
-    }
+    if (!editor || userRole === "viewer") return null;
 
-    const buttonClass = (active) =>
-        `flex h-9 items-center justify-center rounded-lg px-2.5 text-sm font-medium transition ${
-            active
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-gray-300 hover:bg-gray-800 hover:text-white"
-        }`;
-
-    const disabledClass =
-        "cursor-not-allowed opacity-30 hover:bg-transparent hover:text-gray-300";
-
-    const divider = (
-        <div className="mx-1 h-6 w-px bg-gray-700" />
-    );
+    const run = (command) => () => command(editor.chain().focus()).run();
+    const setBlock = (event) => {
+        const chain = editor.chain().focus();
+        if (event.target.value === "paragraph") chain.setParagraph().run();
+        else chain.toggleHeading({ level: Number(event.target.value) }).run();
+    };
+    const currentBlock = editor.isActive("heading", { level: 1 }) ? "1"
+        : editor.isActive("heading", { level: 2 }) ? "2"
+            : editor.isActive("heading", { level: 3 }) ? "3" : "paragraph";
+    const openLinkMenu = () => {
+        setColorMenuOpen(false);
+        setHighlightMenuOpen(false);
+        setLinkUrl(editor.getAttributes("link").href || "https://");
+        setLinkMenuOpen(true);
+    };
+    const applyLink = (event) => {
+        event.preventDefault();
+        const url = linkUrl.trim();
+        if (!url) editor.chain().focus().unsetLink().run();
+        else editor.chain().focus().setLink({ href: url }).run();
+        setLinkMenuOpen(false);
+    };
 
     return (
-        <div className="flex flex-wrap items-center gap-1 border-b border-gray-700 bg-gray-900 px-3 py-2">
-
-            {/* Undo */}
-
-            <button
-                type="button"
-                className={`${buttonClass(false)} ${
-                    !editor.can().undo()
-                        ? disabledClass
-                        : ""
-                }`}
-                onClick={() => {
-                    editor
-                        .chain()
-                        .focus()
-                        .undo()
-                        .run();
-                }}
-                disabled={!editor.can().undo()}
-                title="Undo"
-            >
-                ↶
-            </button>
-
-            {/* Redo */}
-
-            <button
-                type="button"
-                className={`${buttonClass(false)} ${
-                    !editor.can().redo()
-                        ? disabledClass
-                        : ""
-                }`}
-                onClick={() => {
-                    editor
-                        .chain()
-                        .focus()
-                        .redo()
-                        .run();
-                }}
-                disabled={!editor.can().redo()}
-                title="Redo"
-            >
-                ↷
-            </button>
-
-            {divider}
-
-            {/* Headings */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("heading", {
-                        level: 1
-                    })
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleHeading({
-                            level: 1
-                        })
-                        .run()
-                }
-                title="Heading 1"
-            >
-                H1
-            </button>
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("heading", {
-                        level: 2
-                    })
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleHeading({
-                            level: 2
-                        })
-                        .run()
-                }
-                title="Heading 2"
-            >
-                H2
-            </button>
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("heading", {
-                        level: 3
-                    })
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleHeading({
-                            level: 3
-                        })
-                        .run()
-                }
-                title="Heading 3"
-            >
-                H3
-            </button>
-
-            {divider}
-
-            {/* Bold */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("bold")
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleBold()
-                        .run()
-                }
-                title="Bold"
-            >
-                <strong>B</strong>
-            </button>
-
-            {/* Italic */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("italic")
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleItalic()
-                        .run()
-                }
-                title="Italic"
-            >
-                <em>I</em>
-            </button>
-
-            {/* Underline */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("underline")
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleUnderline()
-                        .run()
-                }
-                title="Underline"
-            >
-                <u>U</u>
-            </button>
-
-            {/* Strike */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("strike")
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleStrike()
-                        .run()
-                }
-                title="Strikethrough"
-            >
-                <s>S</s>
-            </button>
-
-            {divider}
-
-            {/* Bullet list */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("bulletList")
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleBulletList()
-                        .run()
-                }
-                title="Bullet list"
-            >
-                • List
-            </button>
-
-            {/* Ordered list */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("orderedList")
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleOrderedList()
-                        .run()
-                }
-                title="Numbered list"
-            >
-                1. List
-            </button>
-
-            {/* Task list */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("taskList")
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleTaskList()
-                        .run()
-                }
-                title="Task list"
-            >
-                ☑ Task
-            </button>
-
-            {divider}
-
-            {/* Blockquote */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("blockquote")
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleBlockquote()
-                        .run()
-                }
-                title="Blockquote"
-            >
-                ❝
-            </button>
-
-            {/* Inline code */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("code")
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleCode()
-                        .run()
-                }
-                title="Inline code"
-            >
-                {"</>"}
-            </button>
-
-            {/* Code block */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("codeBlock")
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleCodeBlock()
-                        .run()
-                }
-                title="Code block"
-            >
-                Code
-            </button>
-
-            {divider}
-
-            {/* Align left */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive({
-                        textAlign: "left"
-                    })
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .setTextAlign("left")
-                        .run()
-                }
-                title="Align left"
-            >
-                ≡
-            </button>
-
-            {/* Align center */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive({
-                        textAlign: "center"
-                    })
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .setTextAlign("center")
-                        .run()
-                }
-                title="Align center"
-            >
-                ≡
-            </button>
-
-            {/* Align right */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive({
-                        textAlign: "right"
-                    })
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .setTextAlign("right")
-                        .run()
-                }
-                title="Align right"
-            >
-                ≡
-            </button>
-
-            {divider}
-
-            {/* Highlight */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("highlight")
-                )}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleHighlight()
-                        .run()
-                }
-                title="Highlight"
-            >
-                <span className="rounded bg-yellow-200 px-1 text-gray-900">
-                    H
-                </span>
-            </button>
-
-            {/* Text color */}
-
-            <button
-                type="button"
-                className={buttonClass(false)}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .setColor("#ef4444")
-                        .run()
-                }
-                title="Red text"
-            >
-                <span className="font-bold text-red-500">
-                    A
-                </span>
-            </button>
-
-            {/* Remove color */}
-
-            <button
-                type="button"
-                className={buttonClass(false)}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .unsetColor()
-                        .run()
-                }
-                title="Remove text color"
-            >
-                A
-            </button>
-
-            {divider}
-
-            {/* Link */}
-
-            <button
-                type="button"
-                className={buttonClass(
-                    editor.isActive("link")
-                )}
-                onClick={() => {
-                    const previousUrl =
-                        editor.getAttributes(
-                            "link"
-                        ).href;
-
-                    const url =
-                        window.prompt(
-                            "Enter URL",
-                            previousUrl ||
-                                "https://"
-                        );
-
-                    if (url === null) {
-                        return;
-                    }
-
-                    if (url === "") {
-                        editor
-                            .chain()
-                            .focus()
-                            .unsetLink()
-                            .run();
-
-                        return;
-                    }
-
-                    editor
-                        .chain()
-                        .focus()
-                        .setLink({
-                            href: url
-                        })
-                        .run();
-                }}
-                title="Add link"
-            >
-                🔗
-            </button>
-
-            {/* Horizontal rule */}
-
-            <button
-                type="button"
-                className={buttonClass(false)}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .setHorizontalRule()
-                        .run()
-                }
-                title="Horizontal line"
-            >
-                ―
-            </button>
-
-            {divider}
-
-            {/* Clear formatting */}
-
-            <button
-                type="button"
-                className={buttonClass(false)}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .clearNodes()
-                        .unsetAllMarks()
-                        .run()
-                }
-                title="Clear formatting"
-            >
-                Tx
-            </button>
+        <div className="editor-toolbar-shell">
+            <div className="editor-toolbar" role="toolbar" aria-label="Document formatting">
+                <div className="editor-toolbar-group">
+                    <ToolButton title="Undo (Ctrl+Z)" disabled={!editor.can().undo()} onClick={run((chain) => chain.undo())}>↶</ToolButton>
+                    <ToolButton title="Redo (Ctrl+Shift+Z)" disabled={!editor.can().redo()} onClick={run((chain) => chain.redo())}>↷</ToolButton>
+                </div>
+                <ToolDivider />
+                <select className="editor-block-select" value={currentBlock} onChange={setBlock} aria-label="Text style">
+                    <option value="paragraph">Normal text</option>
+                    <option value="1">Title</option>
+                    <option value="2">Heading</option>
+                    <option value="3">Subheading</option>
+                </select>
+                <ToolDivider />
+                <div className="editor-toolbar-group">
+                    <ToolButton active={editor.isActive("bold")} title="Bold (Ctrl+B)" onClick={run((chain) => chain.toggleBold())}><strong>B</strong></ToolButton>
+                    <ToolButton active={editor.isActive("italic")} title="Italic (Ctrl+I)" onClick={run((chain) => chain.toggleItalic())}><em>I</em></ToolButton>
+                    <ToolButton active={editor.isActive("underline")} title="Underline (Ctrl+U)" onClick={run((chain) => chain.toggleUnderline())}><span className="underline">U</span></ToolButton>
+                    <ToolButton active={editor.isActive("strike")} title="Strikethrough" onClick={run((chain) => chain.toggleStrike())}><span className="line-through">S</span></ToolButton>
+                    <ToolButton active={editor.isActive("code")} title="Inline code" onClick={run((chain) => chain.toggleCode())}>{"</>"}</ToolButton>
+                </div>
+                <ToolDivider />
+                <div className="editor-toolbar-group">
+                    <ToolButton active={editor.isActive("bulletList")} title="Bullet list" onClick={run((chain) => chain.toggleBulletList())}>• List</ToolButton>
+                    <ToolButton active={editor.isActive("orderedList")} title="Numbered list" onClick={run((chain) => chain.toggleOrderedList())}>1. List</ToolButton>
+                    <ToolButton active={editor.isActive("taskList")} title="Checklist" onClick={run((chain) => chain.toggleTaskList())}>☑</ToolButton>
+                    <ToolButton active={editor.isActive("blockquote")} title="Quote" onClick={run((chain) => chain.toggleBlockquote())}>❝</ToolButton>
+                    <ToolButton active={editor.isActive("codeBlock")} title="Code block" onClick={run((chain) => chain.toggleCodeBlock())}>Code</ToolButton>
+                </div>
+                <ToolDivider />
+                <div className="editor-toolbar-group">
+                    {[["left", "Left"], ["center", "Center"], ["right", "Right"]].map(([align, label]) => (
+                        <ToolButton key={align} active={editor.isActive({ textAlign: align })} title={"Align " + label.toLowerCase()} onClick={run((chain) => chain.setTextAlign(align))}>
+                            <span className={"editor-align editor-align-" + align}>≡</span>
+                        </ToolButton>
+                    ))}
+                </div>
+                <ToolDivider />
+                <div className="editor-toolbar-group editor-color-group">
+                    <ToolButton active={Boolean(editor.getAttributes("textStyle").color)} title="Text colour" onClick={() => { setColorMenuOpen(!colorMenuOpen); setHighlightMenuOpen(false); setLinkMenuOpen(false); }}>
+                        <span className="editor-color-letter">A</span>
+                    </ToolButton>
+                    {colorMenuOpen && <div className="editor-palette" role="dialog" aria-label="Text colours">
+                        {TEXT_COLORS.map((color) => <button key={color} type="button" className="editor-swatch" style={{ backgroundColor: color }} onClick={run((chain) => chain.setColor(color))} aria-label={"Set text color " + color} />)}
+                        <button type="button" className="editor-palette-clear" onClick={run((chain) => chain.unsetColor())}>Clear</button>
+                    </div>}
+                    <ToolButton active={editor.isActive("highlight")} title="Highlight colour" onClick={() => { setHighlightMenuOpen(!highlightMenuOpen); setColorMenuOpen(false); setLinkMenuOpen(false); }}>
+                        <span className="editor-highlight-letter">H</span>
+                    </ToolButton>
+                    {highlightMenuOpen && <div className="editor-palette" role="dialog" aria-label="Highlight colours">
+                        {HIGHLIGHT_COLORS.map((color) => <button key={color} type="button" className="editor-swatch" style={{ backgroundColor: color }} onClick={run((chain) => chain.setHighlight({ color }))} aria-label={"Set highlight color " + color} />)}
+                        <button type="button" className="editor-palette-clear" onClick={run((chain) => chain.unsetHighlight())}>Clear</button>
+                    </div>}
+                </div>
+                <ToolDivider />
+                <div className="editor-toolbar-group editor-link-group">
+                    <ToolButton active={editor.isActive("link")} title="Add or edit link" onClick={openLinkMenu}>Link</ToolButton>
+                    {editor.isActive("link") && <ToolButton title="Remove link" onClick={run((chain) => chain.unsetLink())}>×</ToolButton>}
+                    {linkMenuOpen && <form className="editor-link-popover" onSubmit={applyLink}>
+                        <label htmlFor="editor-link-url">Link URL</label>
+                        <div><input id="editor-link-url" autoFocus value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} placeholder="https://example.com" /><button type="submit">Apply</button></div>
+                    </form>}
+                    <ToolButton title="Horizontal line" onClick={run((chain) => chain.setHorizontalRule())}>—</ToolButton>
+                </div>
+                <ToolDivider />
+                <div className="editor-toolbar-group">
+                    <ToolButton active={editor.isActive("table")} title="Insert a 3 by 3 table" onClick={run((chain) => chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true }))}>Table</ToolButton>
+                    {editor.isActive("table") && <>
+                        <ToolButton title="Add row" onClick={run((chain) => chain.addRowAfter())}>+ Row</ToolButton>
+                        <ToolButton title="Add column" onClick={run((chain) => chain.addColumnAfter())}>+ Col</ToolButton>
+                        <ToolButton className="editor-tool-danger" title="Delete table" onClick={run((chain) => chain.deleteTable())}>Delete</ToolButton>
+                    </>}
+                </div>
+                <ToolDivider />
+                <ToolButton title="Clear formatting" onClick={run((chain) => chain.clearNodes().unsetAllMarks())}>Tx</ToolButton>
+            </div>
         </div>
     );
 }
