@@ -105,7 +105,8 @@ function CollaborationEditor({
             }),
 
             CharacterCount.configure({
-                limit: 200000
+                // Never discard CRDT transactions: the counter is advisory only.
+                limit: 0
             }),
 
             Table.configure({

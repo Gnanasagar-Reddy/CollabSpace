@@ -2,7 +2,9 @@ function DocumentCard({
     document,
     onOpen,
     onDelete,
-    deleting
+    deleting,
+    starred = false,
+    onToggleStar
 }) {
     const formattedDate = new Date(
         document.updatedAt
@@ -19,7 +21,13 @@ function DocumentCard({
                     📄
                 </div>
 
-                <button
+                <div className="flex items-center gap-1">
+                <button type="button" onClick={() => onToggleStar(document._id)} aria-pressed={starred}
+                    aria-label={starred ? "Unstar document" : "Star document"}
+                    className="rounded-lg px-2 py-1 text-lg text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950">
+                    {starred ? "★" : "☆"}
+                </button>
+                {document.accessType === "owned" && <button
                     type="button"
                     disabled={deleting}
                     onClick={() =>
@@ -30,7 +38,8 @@ function DocumentCard({
                     {deleting
                         ? "Deleting..."
                         : "Delete"}
-                </button>
+                </button>}
+                </div>
             </div>
 
             <div className="mt-5 min-w-0 flex-1">

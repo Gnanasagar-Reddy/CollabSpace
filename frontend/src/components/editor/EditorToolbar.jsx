@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import EditorPopover from "./EditorPopover";
 
 const TEXT_COLORS = ["#111827", "#475569", "#4f46e5", "#0f766e", "#b45309", "#be123c", "#7e22ce", "#2563eb"];
 const HIGHLIGHT_COLORS = ["#fef08a", "#bbf7d0", "#bae6fd", "#ddd6fe", "#fecdd3", "#fed7aa"];
@@ -17,6 +18,7 @@ function EditorToolbar({ editor, userRole }) {
     const [highlightMenuOpen, setHighlightMenuOpen] = useState(false);
     const [linkMenuOpen, setLinkMenuOpen] = useState(false);
     const [linkUrl, setLinkUrl] = useState("");
+    const [menuAnchor, setMenuAnchor] = useState(null);
 
     useEffect(() => {
         if (!editor) return undefined;
@@ -42,7 +44,8 @@ function EditorToolbar({ editor, userRole }) {
     const currentBlock = editor.isActive("heading", { level: 1 }) ? "1"
         : editor.isActive("heading", { level: 2 }) ? "2"
             : editor.isActive("heading", { level: 3 }) ? "3" : "paragraph";
-    const openLinkMenu = () => {
+    const openLinkMenu = (event) => {
+        setMenuAnchor(event.currentTarget);
         setColorMenuOpen(false);
         setHighlightMenuOpen(false);
         setLinkUrl(editor.getAttributes("link").href || "https://");
@@ -96,29 +99,29 @@ function EditorToolbar({ editor, userRole }) {
                 </div>
                 <ToolDivider />
                 <div className="editor-toolbar-group editor-color-group">
-                    <ToolButton active={Boolean(editor.getAttributes("textStyle").color)} title="Text colour" onClick={() => { setColorMenuOpen(!colorMenuOpen); setHighlightMenuOpen(false); setLinkMenuOpen(false); }}>
+                    <ToolButton active={Boolean(editor.getAttributes("textStyle").color)} title="Text colour" onClick={(event) => { setMenuAnchor(event.currentTarget); setColorMenuOpen(!colorMenuOpen); setHighlightMenuOpen(false); setLinkMenuOpen(false); }}>
                         <span className="editor-color-letter">A</span>
                     </ToolButton>
-                    {colorMenuOpen && <div className="editor-palette" role="dialog" aria-label="Text colours">
+                    {colorMenuOpen && <EditorPopover anchor={menuAnchor} onClose={() => setColorMenuOpen(false)} className="editor-palette" role="dialog" aria-label="Text colours">
                         {TEXT_COLORS.map((color) => <button key={color} type="button" className="editor-swatch" style={{ backgroundColor: color }} onClick={run((chain) => chain.setColor(color))} aria-label={"Set text color " + color} />)}
                         <button type="button" className="editor-palette-clear" onClick={run((chain) => chain.unsetColor())}>Clear</button>
-                    </div>}
-                    <ToolButton active={editor.isActive("highlight")} title="Highlight colour" onClick={() => { setHighlightMenuOpen(!highlightMenuOpen); setColorMenuOpen(false); setLinkMenuOpen(false); }}>
+                    </EditorPopover>}
+                    <ToolButton active={editor.isActive("highlight")} title="Highlight colour" onClick={(event) => { setMenuAnchor(event.currentTarget); setHighlightMenuOpen(!highlightMenuOpen); setColorMenuOpen(false); setLinkMenuOpen(false); }}>
                         <span className="editor-highlight-letter">H</span>
                     </ToolButton>
-                    {highlightMenuOpen && <div className="editor-palette" role="dialog" aria-label="Highlight colours">
+                    {highlightMenuOpen && <EditorPopover anchor={menuAnchor} onClose={() => setHighlightMenuOpen(false)} className="editor-palette" role="dialog" aria-label="Highlight colours">
                         {HIGHLIGHT_COLORS.map((color) => <button key={color} type="button" className="editor-swatch" style={{ backgroundColor: color }} onClick={run((chain) => chain.setHighlight({ color }))} aria-label={"Set highlight color " + color} />)}
                         <button type="button" className="editor-palette-clear" onClick={run((chain) => chain.unsetHighlight())}>Clear</button>
-                    </div>}
+                    </EditorPopover>}
                 </div>
                 <ToolDivider />
                 <div className="editor-toolbar-group editor-link-group">
                     <ToolButton active={editor.isActive("link")} title="Add or edit link" onClick={openLinkMenu}>Link</ToolButton>
                     {editor.isActive("link") && <ToolButton title="Remove link" onClick={run((chain) => chain.unsetLink())}>×</ToolButton>}
-                    {linkMenuOpen && <form className="editor-link-popover" onSubmit={applyLink}>
+                    {linkMenuOpen && <EditorPopover anchor={menuAnchor} onClose={() => setLinkMenuOpen(false)} className="editor-link-popover" role="dialog" aria-label="Edit link"><form onSubmit={applyLink}>
                         <label htmlFor="editor-link-url">Link URL</label>
                         <div><input id="editor-link-url" autoFocus value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} placeholder="https://example.com" /><button type="submit">Apply</button></div>
-                    </form>}
+                    </form></EditorPopover>}
                     <ToolButton title="Horizontal line" onClick={run((chain) => chain.setHorizontalRule())}>—</ToolButton>
                 </div>
                 <ToolDivider />

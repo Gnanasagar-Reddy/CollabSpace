@@ -34,6 +34,7 @@ function Editor() {
         userRole,
         collaborators,
         loading,
+        error,
         reload
     } = useDocument(documentId);
 
@@ -210,6 +211,37 @@ function Editor() {
         navigate("/dashboard");
     };
 
+    if (!loading && error) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-950">
+                <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                    <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Unable to open document
+                    </h1>
+                    <p role="alert" className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                        {error}
+                    </p>
+                    <div className="mt-6 flex flex-wrap justify-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => navigate("/dashboard")}
+                            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                        >
+                            Back to dashboard
+                        </button>
+                        <button
+                            type="button"
+                            onClick={reload}
+                            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (loading || !document) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
@@ -373,6 +405,7 @@ function Editor() {
 
                             <CollaboratorList
                                 documentId={documentId}
+                                role={userRole}
                                 collaborators={
                                     collaborators
                                 }
@@ -401,6 +434,7 @@ function Editor() {
 
             {showExitModal && (
                 <ExitConfirmModal
+                    canSave={userRole === "owner" || userRole === "editor"}
                     onSaveAndExit={
                         saveDocument
                     }

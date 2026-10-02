@@ -6,6 +6,7 @@ function useDocument(documentId) {
     const [userRole, setUserRole] = useState(null);
     const [collaborators, setCollaborators] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     const loadDocument = useCallback(async () => {
         if (!documentId) {
@@ -13,6 +14,7 @@ function useDocument(documentId) {
         }
 
         setLoading(true);
+        setError("");
 
         try {
             const response = await api.get(
@@ -31,6 +33,9 @@ function useDocument(documentId) {
                 "Error loading document:",
                 error.response?.data || error
             );
+            setError(
+                error.response?.data?.message || "Failed to load this document. Please try again."
+            );
         } finally {
             setLoading(false);
         }
@@ -45,6 +50,7 @@ function useDocument(documentId) {
         userRole,
         collaborators,
         loading,
+        error,
         reload: loadDocument
     };
 }

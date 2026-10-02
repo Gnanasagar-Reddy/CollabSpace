@@ -47,7 +47,19 @@ const sendCollaborationRequest = async (
         );
     }
 
+    if (typeof email !== "string") {
+        throw new ApiError(400, "User email must be a string");
+    }
+    if (message != null && typeof message !== "string") {
+        throw new ApiError(400, "Message must be a string");
+    }
     const cleanEmail = email.trim();
+    if (cleanEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+        throw new ApiError(400, "Enter a valid email address");
+    }
+    if ((message?.trim().length || 0) > 500) {
+        throw new ApiError(400, "Message must be at most 500 characters");
+    }
 
     if (!cleanEmail) {
         throw new ApiError(
@@ -147,76 +159,60 @@ const acceptCollaborationRequest = async (
     requestId,
     userId
 ) => {
-    const request =
-        await CollaborationRequest
-            .findOneAndUpdate(
-                {
-                    _id: requestId,
-                    recipient: userId,
-                    status: "pending"
-                },
-                {
-                    $set: {
-                        status: "accepted"
-                    }
-                },
-                {
-                    new: true
-                }
+    const result = await Document.db.transaction(async (session) => {
+        const pendingRequest = {
+            _id: requestId,
+            recipient: userId,
+            status: "pending"
+        };
+        const request = await CollaborationRequest.findOne(pendingRequest).session(session);
+        if (!request) {
+            throw new ApiError(404, "Collaboration request is no longer pending");
+        }
+
+        const document = await Document.findById(request.document).session(session);
+        if (!document) {
+            // A deleted document cannot be shared; finish this invitation truthfully.
+            await CollaborationRequest.findOneAndUpdate(
+                pendingRequest, { $set: { status: "rejected" } }, { session }
             );
+            return { missingDocument: true };
+        }
+        if (document.owner.toString() !== request.sender.toString()) {
+            throw new ApiError(409, "This invitation is no longer valid for the document owner");
+        }
 
-    if (!request) {
-        throw new ApiError(
-            404,
-            "Collaboration request is no longer pending"
-        );
-    }
-
-    const document =
-        await Document.findById(
-            request.document
-        );
-
-    if (!document) {
-        await CollaborationRequest.updateOne(
-            {
-                _id: request._id
-            },
-            {
-                $set: {
-                    status: "rejected"
-                }
+        const alreadyHasAccess = document.owner.toString() === userId.toString() ||
+            document.collaborators.some((item) => item.user.toString() === userId.toString());
+        let grantedDocument = document;
+        if (!alreadyHasAccess) {
+            grantedDocument = await Document.findOneAndUpdate(
+                {
+                    _id: request.document,
+                    owner: request.sender,
+                    "collaborators.user": { $ne: userId }
+                },
+                { $push: { collaborators: { user: userId, role: request.role } } },
+                { new: true, runValidators: true, session }
+            );
+            if (!grantedDocument) {
+                throw new ApiError(409, "Document permissions changed. Please try again.");
             }
-        );
+        }
 
-        throw new ApiError(
-            404,
-            "Document no longer exists"
+        const acceptedRequest = await CollaborationRequest.findOneAndUpdate(
+            pendingRequest, { $set: { status: "accepted" } }, { new: true, session }
         );
+        if (!acceptedRequest) {
+            throw new ApiError(409, "Collaboration request is no longer pending");
+        }
+        return { document: grantedDocument };
+    });
+
+    if (result.missingDocument) {
+        throw new ApiError(404, "Document no longer exists");
     }
-
-    const updatedDocument =
-        await Document.findOneAndUpdate(
-            {
-                _id: request.document,
-                "collaborators.user": {
-                    $ne: userId
-                }
-            },
-            {
-                $push: {
-                    collaborators: {
-                        user: userId,
-                        role: request.role
-                    }
-                }
-            },
-            {
-                new: true
-            }
-        );
-
-    return updatedDocument || document;
+    return result.document;
 };
 
 const rejectCollaborationRequest = async (
@@ -224,11 +220,11 @@ const rejectCollaborationRequest = async (
     userId
 ) => {
     const request =
-        await CollaborationRequest.findOne({
-            _id: requestId,
-            recipient: userId,
-            status: "pending"
-        });
+        await CollaborationRequest.findOneAndUpdate(
+            { _id: requestId, recipient: userId, status: "pending" },
+            { $set: { status: "rejected" } },
+            { new: true }
+        );
 
     if (!request) {
         throw new ApiError(
@@ -236,10 +232,6 @@ const rejectCollaborationRequest = async (
             "Collaboration request not found"
         );
     }
-
-    request.status = "rejected";
-
-    await request.save();
 
     return request;
 };

@@ -6,6 +6,16 @@ function ThemeToggle() {
     );
 
     useEffect(() => {
+        const syncTheme = () => setDarkMode(localStorage.getItem("theme") === "dark");
+        window.addEventListener("storage", syncTheme);
+        window.addEventListener("collabspace:theme", syncTheme);
+        return () => {
+            window.removeEventListener("storage", syncTheme);
+            window.removeEventListener("collabspace:theme", syncTheme);
+        };
+    }, []);
+
+    useEffect(() => {
         const root = document.documentElement;
 
         if (darkMode) {
@@ -20,7 +30,10 @@ function ThemeToggle() {
     return (
         <button
             type="button"
-            onClick={() => setDarkMode((prev) => !prev)}
+            onClick={() => {
+                localStorage.setItem("theme", darkMode ? "light" : "dark");
+                window.dispatchEvent(new Event("collabspace:theme"));
+            }}
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             title={
                 darkMode

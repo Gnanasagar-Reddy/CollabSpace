@@ -44,6 +44,8 @@ function useDocumentSocket(
             );
         };
 
+        const handleDisconnect = () => setOnlineUsers([]);
+
         const handleDocumentRestored = (data) => {
             if (
                 data.documentId === documentId &&
@@ -68,6 +70,9 @@ function useDocumentSocket(
             handleDocumentRestored
         );
 
+        socket.on("disconnect", handleDisconnect);
+        socket.on("document-permissions-updated", handleDocumentRestored);
+        socket.on("connect_error", handleDisconnect);
         connectSocket();
 
         if (socket.connected) {
@@ -75,6 +80,10 @@ function useDocumentSocket(
         }
 
         return () => {
+            handleDisconnect();
+            socket.off("disconnect", handleDisconnect);
+            socket.off("document-permissions-updated", handleDocumentRestored);
+            socket.off("connect_error", handleDisconnect);
             socket.off(
                 "connect",
                 handleConnect

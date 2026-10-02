@@ -26,6 +26,11 @@ function EditorContentArea({ editor, userRole }) {
                 <span>{userRole === "viewer" ? "View only" : "Changes sync automatically"}</span>
                 <span>{words} {words === 1 ? "word" : "words"} · {characters} characters</span>
             </div>
+            {characters > 200000 && (
+                <p role="status" className="px-4 pb-3 text-sm text-amber-700 dark:text-amber-300">
+                    This document exceeds the recommended 200,000 characters. Changes still sync, but editing may be slower.
+                </p>
+            )}
         </div>
     );
 }

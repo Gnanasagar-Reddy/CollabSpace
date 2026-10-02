@@ -5,8 +5,11 @@ function useDashboard() {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState(null);
+    const [loadError, setLoadError] = useState("");
+    const [deleteError, setDeleteError] = useState("");
 
     const fetchDocuments = async () => {
+        setLoadError("");
         try {
             const response = await api.get(
                 "/documents"
@@ -16,8 +19,8 @@ function useDashboard() {
                 response.data.data
             );
         } catch (error) {
-            console.log(
-                error.response?.data
+            setLoadError(
+                error.response?.data?.message || "Unable to load documents. Please try again."
             );
         } finally {
             setLoading(false);
@@ -36,6 +39,7 @@ function useDashboard() {
         }
 
         try {
+            setDeleteError("");
             setDeletingId(documentId);
 
             await api.delete(
@@ -51,8 +55,8 @@ function useDashboard() {
                     )
             );
         } catch (error) {
-            console.log(
-                error.response?.data
+            setDeleteError(
+                error.response?.data?.message || "Unable to delete this document. Please try again."
             );
         } finally {
             setDeletingId(null);
@@ -67,6 +71,9 @@ function useDashboard() {
         documents,
         loading,
         deletingId,
+        loadError,
+        deleteError,
+        clearDeleteError: () => setDeleteError(""),
         fetchDocuments,
         deleteDocument
     };

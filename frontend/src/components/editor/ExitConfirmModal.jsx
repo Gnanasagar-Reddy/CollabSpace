@@ -2,7 +2,8 @@ function ExitConfirmModal({
     onSaveAndExit,
     onExitWithoutSaving,
     onCancel,
-    saving
+    saving,
+    canSave = false
 }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
@@ -16,8 +17,9 @@ function ExitConfirmModal({
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-gray-500">
-                    Your edits sync automatically for everyone.
-                    You can leave safely at any time.
+                    {canSave
+                        ? "Your edits sync automatically for everyone. You can leave safely at any time."
+                        : "You are viewing this document. You can return to your dashboard."}
                 </p>
 
                 <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
@@ -39,7 +41,7 @@ function ExitConfirmModal({
                         Exit
                     </button>
 
-                    <button
+                    {canSave && <button
                         type="button"
                         onClick={onSaveAndExit}
                         disabled={saving}
@@ -48,7 +50,7 @@ function ExitConfirmModal({
                         {saving
                             ? "Saving..."
                             : "Save & Exit"}
-                    </button>
+                    </button>}
                 </div>
             </div>
         </div>

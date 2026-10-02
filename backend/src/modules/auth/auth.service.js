@@ -12,7 +12,7 @@ const {
 const REFRESH_TOKEN_LIFETIME =
     7 * 24 * 60 * 60 * 1000;
 const MIN_PASSWORD_LENGTH = 6;
-const MAX_PASSWORD_LENGTH = 128;
+const MAX_PASSWORD_BYTES = 72;
 const MAX_NAME_LENGTH = 100;
 
 const normalizeEmail = (email) => {
@@ -57,11 +57,11 @@ const validateRegistrationData = (userData) => {
     if (
         typeof password !== "string" ||
         password.length < MIN_PASSWORD_LENGTH ||
-        password.length > MAX_PASSWORD_LENGTH
+        Buffer.byteLength(password, "utf8") > MAX_PASSWORD_BYTES
     ) {
         throw new ApiError(
             400,
-            "Password must be between 6 and 128 characters"
+            "Password must be at least 6 characters and at most 72 UTF-8 bytes"
         );
     }
 

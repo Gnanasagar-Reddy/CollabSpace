@@ -25,6 +25,10 @@ function Register() {
         e.preventDefault();
 
         setMessage("");
+        if (new TextEncoder().encode(form.password).length > 72) {
+            setMessage("Password must be at most 72 UTF-8 bytes. Symbols and non-English characters may use multiple bytes.");
+            return;
+        }
         setLoading(true);
 
         try {
@@ -140,8 +144,13 @@ function Register() {
                                     placeholder="Create a password"
                                     required
                                     minLength={6}
+                                    maxLength={72}
+                                    aria-describedby="password-length-help"
                                     className="h-12 w-full rounded-xl border border-gray-300 px-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50"
                                 />
+                                <p id="password-length-help" className="mt-2 text-xs text-gray-500">
+                                    At least 6 characters, up to 72 UTF-8 bytes. Symbols and non-English characters may use multiple bytes.
+                                </p>
                             </div>
 
                             {message && (

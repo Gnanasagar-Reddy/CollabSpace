@@ -9,8 +9,11 @@ import api from "../services/api";
 
 import { AuthContext } from "../context/AuthContext";
 import { getUserProfile } from "../utils/userProfile";
+import { getGreeting } from "../utils/greeting";
 
 import useDashboard from "../hooks/useDashboard";
+import useStarredDocuments from "../hooks/useStarredDocuments";
+import SettingsModal from "../components/dashboard/SettingsModal";
 import useCollaborationRequests from "../hooks/useCollaborationRequests";
 
 import DashboardHeader from "../components/dashboard/DashboardHeader";
@@ -30,13 +33,20 @@ function Dashboard() {
     } = useContext(AuthContext);
 
     const { name: userName } = getUserProfile(user);
+    const { starredIds, toggleStar, error: starError } = useStarredDocuments(user?._id);
+    const [showSettings, setShowSettings] = useState(false);
+    const [recentNow, setRecentNow] = useState(() => Date.now());
 
 
     const {
         documents,
         loading,
         deletingId,
-        deleteDocument
+        loadError,
+        deleteError,
+        clearDeleteError,
+        deleteDocument,
+        fetchDocuments
     } = useDashboard();
 
 
@@ -79,6 +89,9 @@ function Dashboard() {
                 "/documents/share-requests/" + requestId + "/" + action
             );
             await fetchRequests();
+            if (action === "accept") {
+                await fetchDocuments();
+            }
             return true;
         } catch (error) {
             const actionLabel = action.charAt(0).toUpperCase() + action.slice(1);
@@ -103,6 +116,7 @@ function Dashboard() {
 
     const [creating, setCreating] =
         useState(false);
+    const [createError, setCreateError] = useState("");
 
 
     const [searchQuery, setSearchQuery] =
@@ -126,6 +140,7 @@ function Dashboard() {
         try {
 
             setCreating(true);
+            setCreateError("");
 
 
             const response = await api.post(
@@ -151,9 +166,8 @@ function Dashboard() {
 
         } catch (error) {
 
-            console.log(
-                error.response?.data ||
-                error
+            setCreateError(
+                error.response?.data?.message || "Unable to create this document. Please try again."
             );
 
         } finally {
@@ -193,6 +207,12 @@ function Dashboard() {
     const filteredDocuments =
         documents
             .filter((document) => {
+
+                if (documentView === "starred") return starredIds.includes(document._id);
+                if (documentView === "recent") {
+                    const age = recentNow - new Date(document.updatedAt).getTime();
+                    return age >= 0 && age < 24 * 60 * 60 * 1000;
+                }
 
                 if (
                     documentView ===
@@ -323,6 +343,9 @@ function Dashboard() {
                 }
 
                 activeView={documentView}
+                onRecent={() => { setRecentNow(Date.now()); setDocumentView("recent"); }}
+                onStarred={() => setDocumentView("starred")}
+                onSettings={() => setShowSettings(true)}
 
                 onRequests={
                     openRequests
@@ -338,6 +361,27 @@ function Dashboard() {
             {/* MAIN */}
 
             <main className="px-4 py-8 sm:px-6 sm:py-10 lg:ml-64 lg:px-8 lg:py-12">
+                {starError && <p role="alert" className="mb-4 text-sm text-red-600 dark:text-red-400">{starError}</p>}
+                <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                    {documentView === "recent" ? "Recently updated (last 24 hours)" : documentView === "starred" ? "Starred documents" : "Documents"}
+                </h2>
+
+                {loadError && (
+                    <div role="alert" className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+                        <span>{loadError}</span>
+                        <button type="button" onClick={fetchDocuments} className="shrink-0 font-semibold underline">
+                            Retry loading
+                        </button>
+                    </div>
+                )}
+                {deleteError && (
+                    <div role="alert" className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+                        <span>{deleteError}</span>
+                        <button type="button" onClick={clearDeleteError} className="shrink-0 font-semibold underline">
+                            Dismiss
+                        </button>
+                    </div>
+                )}
 
 
                 {/* PAGE HEADER */}
@@ -359,7 +403,7 @@ function Dashboard() {
 
                         <h1 className="mt-2 text-3xl font-bold tracking-[-0.035em] text-gray-950 dark:text-white sm:text-4xl">
 
-                            Good evening,
+                            {getGreeting()},
 
                             <span className="ml-2 text-indigo-600 dark:text-indigo-400">
                                 {userName}
@@ -536,15 +580,17 @@ function Dashboard() {
 
                 <section>
 
-                    {filteredDocuments.length === 0 ? (
+                    {filteredDocuments.length === 0 ? (!loadError && (
 
-                        <EmptyDocuments
+                        (documentView === "starred" || documentView === "recent" || searchQuery.trim()) ? (
+                            <p className="py-12 text-center text-gray-500 dark:text-gray-400">No documents match this view. Use Overview to browse your documents.</p>
+                        ) : <EmptyDocuments
                             onCreate={() =>
                                 setShowCreate(true)
                             }
                         />
 
-                    ) : (
+                    )) : (
 
                         <DocumentGrid
                             documents={
@@ -553,6 +599,8 @@ function Dashboard() {
                             onOpen={openDocument}
                             onDelete={deleteDocument}
                             deletingId={deletingId}
+                            starredIds={starredIds}
+                            onToggleStar={toggleStar}
                         />
 
                     )}
@@ -563,12 +611,16 @@ function Dashboard() {
 
 
             {/* CREATE DOCUMENT */}
+            {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} />}
 
             {showCreate && (
 
                 <CreateDocumentModal
                     title={title}
-                    setTitle={setTitle}
+                    setTitle={(value) => {
+                        setTitle(value);
+                        setCreateError("");
+                    }}
                     onCreate={createDocument}
                     onClose={() => {
 
@@ -576,11 +628,13 @@ function Dashboard() {
 
                             setShowCreate(false);
                             setTitle("");
+                            setCreateError("");
 
                         }
 
                     }}
                     creating={creating}
+                    error={createError}
                 />
 
             )}

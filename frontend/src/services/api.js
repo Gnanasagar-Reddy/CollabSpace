@@ -49,7 +49,7 @@ api.interceptors.response.use(
             error.config;
 
         const isAuthRequest =
-            originalRequest?.url?.includes("/auth/");
+            /\/auth\/(?:login|register|refresh-token|logout)(?:[/?#]|$)/.test(originalRequest?.url || "");
 
 
         if (
@@ -82,6 +82,10 @@ api.interceptors.response.use(
                 const newAccessToken =
                     response.data.data.accessToken;
 
+                if (typeof newAccessToken !== "string" || !newAccessToken) {
+                    throw new Error("The server did not return a valid access token");
+                }
+
 
                 localStorage.setItem(
                     "accessToken",
@@ -100,15 +104,12 @@ api.interceptors.response.use(
 
             } catch (refreshError) {
 
-                localStorage.removeItem(
-                    "accessToken"
-                );
-
-                if (
-                    window.location.pathname !==
-                    "/login"
-                ) {
-                    window.location.assign("/login");
+                // A network outage or server error does not invalidate the session.
+                if ([401, 403].includes(refreshError.response?.status)) {
+                    localStorage.removeItem("accessToken");
+                    if (window.location.pathname !== "/login") {
+                        window.location.assign("/login");
+                    }
                 }
 
                 return Promise.reject(

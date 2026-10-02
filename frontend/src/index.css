@@ -298,7 +298,7 @@ body,
 }
 
 .editor-link-popover {
-    min-width: 19rem;
+    min-width: min(19rem, calc(100vw - 16px));
     padding: 0.75rem;
 }
 

@@ -104,6 +104,7 @@ const updateCollaboratorRole = asyncHandler(async (req, res) => {
         document,
         "Collaborator role updated"
     );
+    getIo()?.to(`document_${req.params.id}`).emit("document-permissions-updated", { documentId: req.params.id });
 });
 
 const removeCollaborator = asyncHandler(async (req, res) => {
@@ -124,6 +125,7 @@ const removeCollaborator = asyncHandler(async (req, res) => {
         document,
         "Collaborator removed"
     );
+    getIo()?.to(`document_${req.params.id}`).emit("document-permissions-updated", { documentId: req.params.id });
 });
 
 const saveDocument = asyncHandler(async (req, res) => {

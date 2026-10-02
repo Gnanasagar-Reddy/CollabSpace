@@ -5,7 +5,8 @@ function CreateDocumentModal({
     setTitle,
     onCreate,
     onClose,
-    creating
+    creating,
+    error
 }) {
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -81,6 +82,12 @@ function CreateDocumentModal({
                         autoFocus
                         className="h-11 w-full rounded-lg border border-gray-300 px-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50"
                     />
+
+                    {error && (
+                        <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-400">
+                            {error}
+                        </p>
+                    )}
 
                     <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         <button

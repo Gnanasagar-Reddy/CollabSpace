@@ -80,16 +80,84 @@ const editorExtensions = [
     TableCell
 ];
 
-const getDocumentId = (documentName) => {
+const getDocumentSession = (documentName) => {
     const match = documentName.match(
-        /^document_([a-f\d]{24})(?:_v\d+)?$/i
+        /^document_([a-f\d]{24})(?:_v(\d+))?$/i
     );
 
     if (!match) {
         throw new Error("Invalid document name");
     }
 
-    return match[1];
+    const collaborationVersion = Number(match[2] || 0);
+    if (!Number.isSafeInteger(collaborationVersion)) {
+        throw new Error("Invalid collaboration version");
+    }
+    return { documentId: match[1], collaborationVersion };
+};
+
+const assertCurrentSession = (document, collaborationVersion) => {
+    if ((document.collaborationVersion ?? 0) !== collaborationVersion) {
+        throw new Error("Document was restored. Reload to join the current collaboration session.");
+    }
+};
+
+const activeRooms = new Map();
+let permissionTimer;
+let checkingPermissions = false;
+
+const closeForPermissions = (connection) => {
+    connection.readOnly = true;
+    connection.close({ code: 1008, reason: "Document access changed. Reload the document." });
+};
+
+const applyCurrentPermissions = (connection, document, collaborationVersion) => {
+    if (!document || !connection.context?.userId) {
+        throw new Error("Document access is no longer available");
+    }
+    assertCurrentSession(document, collaborationVersion);
+    const access = getDocumentAccess(document, connection.context.userId);
+    if (!access.hasAccess) throw new Error("Document access was revoked");
+    connection.readOnly = !access.canEdit;
+    connection.context.role = access.role;
+};
+
+const revalidateConnection = async ({ documentName, connection }) => {
+    const { documentId, collaborationVersion } = getDocumentSession(documentName);
+    try {
+        const document = await Document.findById(documentId).select("owner collaborators collaborationVersion");
+        applyCurrentPermissions(connection, document, collaborationVersion);
+    } catch (error) {
+        closeForPermissions(connection);
+        throw error;
+    }
+};
+
+// Idle clients must also be revoked, even when they send no more messages.
+const refreshActivePermissions = async () => {
+    if (checkingPermissions) return;
+    checkingPermissions = true;
+    try {
+        await Promise.all([...activeRooms].map(async ([documentName, connections]) => {
+            const { documentId, collaborationVersion } = getDocumentSession(documentName);
+            try {
+                const document = await Document.findById(documentId).select("owner collaborators collaborationVersion");
+                for (const connection of [...connections]) {
+                    try { applyCurrentPermissions(connection, document, collaborationVersion); }
+                    catch { closeForPermissions(connection); }
+                }
+            } catch {
+                for (const connection of [...connections]) closeForPermissions(connection);
+            }
+        }));
+    } finally {
+        checkingPermissions = false;
+    }
+};
+
+const stopPermissionChecks = () => {
+    clearInterval(permissionTimer);
+    permissionTimer = undefined;
 };
 
 const createYjsDocument = (content) => {
@@ -115,7 +183,7 @@ const collaborationServer = new Server({
     async onAuthenticate({
         token,
         documentName,
-        connection
+        connectionConfig
     }) {
         if (!token) {
             throw new Error(
@@ -138,7 +206,7 @@ const collaborationServer = new Server({
             );
         }
 
-        const documentId = getDocumentId(documentName);
+        const { documentId, collaborationVersion } = getDocumentSession(documentName);
 
         const document =
             await Document.findById(
@@ -151,6 +219,7 @@ const collaborationServer = new Server({
             );
         }
 
+        assertCurrentSession(document, collaborationVersion);
         const { hasAccess, role } = getDocumentAccess(document, user._id);
 
         if (!hasAccess) {
@@ -159,9 +228,7 @@ const collaborationServer = new Server({
             );
         }
 
-        if (role === "viewer") {
-            connection.readOnly = true;
-        }
+        connectionConfig.readOnly = role === "viewer";
 
         console.log(
             `Collaboration authenticated: ${user.email}`
@@ -183,8 +250,36 @@ const collaborationServer = new Server({
         };
     },
 
+    async connected({ documentName, connection }) {
+        let connections = activeRooms.get(documentName);
+        if (!connections) {
+            connections = new Set();
+            activeRooms.set(documentName, connections);
+        }
+        connections.add(connection);
+        connection.onClose(() => {
+            connections.delete(connection);
+            if (!connections.size) activeRooms.delete(documentName);
+            if (!activeRooms.size) stopPermissionChecks();
+        });
+        if (!permissionTimer) {
+            permissionTimer = setInterval(() =>
+                refreshActivePermissions().catch((error) => console.error("Permission check failed:", error)), 1000);
+            permissionTimer.unref();
+        }
+        // Covers a permission change between authentication and connection setup.
+        await revalidateConnection({ documentName, connection });
+    },
+
+    beforeHandleMessage: revalidateConnection,
+
+    async onDestroy() {
+        stopPermissionChecks();
+        activeRooms.clear();
+    },
+
     async onLoadDocument({ documentName }) {
-        const documentId = getDocumentId(documentName);
+        const { documentId, collaborationVersion } = getDocumentSession(documentName);
 
         const document = await Document.findById(
             documentId
@@ -194,6 +289,7 @@ const collaborationServer = new Server({
             throw new Error("Document not found");
         }
 
+        assertCurrentSession(document, collaborationVersion);
         if (document.yjsState) {
             const ydoc = new Y.Doc();
 
@@ -215,7 +311,7 @@ const collaborationServer = new Server({
         document,
         documentName
     }) {
-        const documentId = getDocumentId(documentName);
+        const { documentId, collaborationVersion } = getDocumentSession(documentName);
 
         const contentJson =
             TiptapTransformer.fromYdoc(
@@ -223,16 +319,25 @@ const collaborationServer = new Server({
                 "default"
             );
 
-        await Document.findByIdAndUpdate(
-            documentId,
+        // Check the epoch in the write itself: a restore can race a queued save.
+        // Legacy documents without an epoch are treated as version zero only.
+        await Document.updateOne(
             {
-                content: generateHTML(
-                    contentJson,
-                    editorExtensions
-                ),
-                yjsState: Buffer.from(
-                    Y.encodeStateAsUpdate(document)
-                ).toString("base64")
+                _id: documentId,
+                ...(collaborationVersion === 0
+                    ? { $or: [{ collaborationVersion: 0 }, { collaborationVersion: { $exists: false } }] }
+                    : { collaborationVersion })
+            },
+            {
+                $set: {
+                    content: generateHTML(
+                        contentJson,
+                        editorExtensions
+                    ),
+                    yjsState: Buffer.from(
+                        Y.encodeStateAsUpdate(document)
+                    ).toString("base64")
+                }
             }
         );
     },

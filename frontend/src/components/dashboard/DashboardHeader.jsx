@@ -9,6 +9,9 @@ function DashboardHeader({
     onOverview,
     onMyDocuments,
     onSharedDocuments,
+    onRecent,
+    onStarred,
+    onSettings,
     onRequests,
     requestCount = 0,
     activeView
@@ -51,12 +54,14 @@ function DashboardHeader({
                     onOverview={onOverview}
                     onMyDocuments={onMyDocuments}
                     onSharedDocuments={onSharedDocuments}
+                    onRecent={onRecent}
+                    onStarred={onStarred}
                 />
 
 
                 {/* SIDEBAR BOTTOM */}
 
-                <DashboardSidebarFooter user={user} onLogout={onLogout} />
+                <DashboardSidebarFooter user={user} onLogout={onLogout} onSettings={onSettings} />
 
             </aside>
 
@@ -297,7 +302,8 @@ function DashboardHeader({
                     onMyDocuments={onMyDocuments}
                     onSharedDocuments={onSharedDocuments}
                     onNavigate={handleNavigation}
-                    showActivity={false}
+                    onRecent={onRecent}
+                    onStarred={onStarred}
                 >
                     <button
                         type="button"
@@ -321,7 +327,7 @@ function DashboardHeader({
 
                 {/* MOBILE SIDEBAR BOTTOM */}
 
-                <DashboardSidebarFooter user={user} onLogout={onLogout} mobile />
+                <DashboardSidebarFooter user={user} onLogout={onLogout} onSettings={() => handleNavigation(onSettings)} mobile />
 
             </aside>
         </>

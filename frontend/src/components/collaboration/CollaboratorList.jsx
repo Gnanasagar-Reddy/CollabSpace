@@ -4,8 +4,11 @@ import api from "../../services/api";
 function CollaboratorList({
     documentId,
     collaborators = [],
-    onUpdate
+    onUpdate,
+    role
 }) {
+    const canManage = role === "owner";
+
     const [message, setMessage] =
         useState("");
 
@@ -13,6 +16,8 @@ function CollaboratorList({
         collaboratorId,
         role
     ) => {
+        if (!canManage) return;
+
         try {
             await api.patch(
                 `/documents/${documentId}/collaborators/${collaboratorId}`,
@@ -37,6 +42,8 @@ function CollaboratorList({
     const removeCollaborator = async (
         collaboratorId
     ) => {
+        if (!canManage) return;
+
         try {
             await api.delete(
                 `/documents/${documentId}/collaborators/${collaboratorId}`
@@ -72,7 +79,7 @@ function CollaboratorList({
                         </h2>
 
                         <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                            Manage document access
+                            {canManage ? "Manage document access" : "Document members"}
                         </p>
                     </div>
 
@@ -93,8 +100,9 @@ function CollaboratorList({
                     </p>
 
                     <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                        Share this document to
-                        invite someone.
+                        {canManage
+                            ? "Share this document to invite someone."
+                            : "No other members have been added."}
                     </p>
 
                 </div>
@@ -156,7 +164,7 @@ function CollaboratorList({
 
                                     </div>
 
-                                    <div className="flex items-center gap-2">
+                                    {canManage ? <div className="flex items-center gap-2">
 
                                         <select
                                             value={
@@ -196,7 +204,11 @@ function CollaboratorList({
                                             Remove
                                         </button>
 
-                                    </div>
+                                    </div> : (
+                                        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-900 dark:text-gray-300">
+                                            {collaborator.role === "editor" ? "Editor" : "Viewer"}
+                                        </span>
+                                    )}
 
                                 </div>
                             );

@@ -4,7 +4,7 @@ import { getUserProfile } from "../../utils/userProfile";
 const navigateDirectly = (callback) => callback();
 
 export function DashboardNavigation({
-    activeView, onOverview, onMyDocuments, onSharedDocuments,
+    activeView, onOverview, onMyDocuments, onSharedDocuments, onRecent, onStarred,
     onNavigate = navigateDirectly, showActivity = true, children
 }) {
     const navigation = [
@@ -32,10 +32,10 @@ export function DashboardNavigation({
                 Activity
             </p>
             {showActivity && <>
-                <button type="button" className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white">
+                <button type="button" onClick={() => onNavigate(onRecent)} className={getNavClass("recent")}>
                     <span>◷</span> Recent
                 </button>
-                <button type="button" className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white">
+                <button type="button" onClick={() => onNavigate(onStarred)} className={getNavClass("starred")}>
                     <span>★</span> Starred
                 </button>
             </>}
@@ -43,7 +43,7 @@ export function DashboardNavigation({
     );
 }
 
-export function DashboardSidebarFooter({ user, onLogout, mobile = false }) {
+export function DashboardSidebarFooter({ user, onLogout, onSettings, mobile = false }) {
     const { name: userName, initial: userInitial } = getUserProfile(user);
     const logoutClass = mobile
         ? "text-xs font-semibold text-red-500 transition hover:text-red-600"
@@ -52,7 +52,7 @@ export function DashboardSidebarFooter({ user, onLogout, mobile = false }) {
     return (
         <div className="border-t border-gray-100 p-3 dark:border-gray-800">
             <div className="flex items-center gap-2">
-                <button type="button" className="flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white">
+                <button type="button" onClick={onSettings} className="flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white">
                     <span>⚙</span> Settings
                 </button>
                 <ThemeToggle />
