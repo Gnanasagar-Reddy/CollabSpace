@@ -4,10 +4,6 @@
 
 CollabSpace is a collaborative rich-text document editor built with React and Node.js. It combines live editing, document sharing, online presence, and version history in a workspace with separate services for collaboration and background persistence.
 
-## High-Level Design
-
-## High-level architecture
-
 ## High-level architecture
 
 ```mermaid
