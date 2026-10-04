@@ -6,52 +6,56 @@ CollabSpace is a collaborative rich-text document editor built with React and No
 
 ## High-Level Design
 
+## High-level architecture
+
+## High-level architecture
+
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial","fontSize":"12px","primaryTextColor":"#ffffff","lineColor":"#808080","edgeLabelBackground":"#17232e","clusterBkg":"#303030","clusterBorder":"#454545"},"flowchart":{"curve":"stepAfter","nodeSpacing":30,"rankSpacing":65,"padding":14,"htmlLabels":true}}}%%
+flowchart LR
+    User["User's browser"]
+    Frontend["React + Tiptap frontend<br/>Vite :5173"]
+    Proxy["Load balancer<br/>localhost:80"]
+    API["Express API instances<br/>:5001 · :5002 · :5003"]
+    CRDT["Hocuspocus + Yjs<br/>WebSocket :1234"]
+    Redis[("Redis<br/>Socket.IO adapter, presence,<br/>drafts and BullMQ queue")]
+    Worker["Document save worker"]
+    Mongo[("MongoDB<br/>users, documents, Yjs state,<br/>invitations and version history")]
 
-flowchart TB
-    Browser("Browser clients<br/>React · Tiptap · Yjs")
+    User --> Frontend
+    Frontend -->|"REST: auth, documents,<br/>sharing, save, history"| Proxy
+    Frontend -->|"Socket.IO: presence<br/>and notifications"| Proxy
+    Proxy --> API
 
-    subgraph Services["Application services"]
-        Worker("BullMQ worker<br/>Queued draft persistence")
-        CRDT("Hocuspocus server<br/>Yjs document synchronization")
+    Frontend -->|"Yjs updates: live editing"| CRDT
+    CRDT -->|"Persist document state"| Mongo
 
-        subgraph APIProcess["API process"]
-            API("Express REST API<br/>Authentication · Documents<br/>Sharing")
-            Socket("Socket.IO<br/>Presence · Document events")
-        end
-    end
+    API -->|"Read and write application data"| Mongo
+    API <-->|"Presence, cross-instance events<br/>and queued drafts"| Redis
+    Redis -->|"Delayed save jobs"| Worker
+    Worker -->|"Persist eligible drafts"| Mongo
 
-    Mongo[("MongoDB<br/>Users · Documents · Yjs state<br/>Versions · Invitations · Sessions")]
-    Redis[("Redis<br/>Presence · Pub/Sub<br/>Drafts · Job queue")]
+    classDef browser fill:#F1F5F9,stroke:#64748B,color:#0F172A,stroke-width:2px
+    classDef frontend fill:#DBEAFE,stroke:#2563EB,color:#1E3A8A,stroke-width:2px
+    classDef proxy fill:#FEF3C7,stroke:#D97706,color:#78350F,stroke-width:2px
+    classDef api fill:#E0E7FF,stroke:#4F46E5,color:#312E81,stroke-width:2px
+    classDef crdt fill:#F3E8FF,stroke:#9333EA,color:#581C87,stroke-width:2px
+    classDef redis fill:#FFEDD5,stroke:#EA580C,color:#7C2D12,stroke-width:2px
+    classDef worker fill:#DCFCE7,stroke:#16A34A,color:#14532D,stroke-width:2px
+    classDef mongo fill:#CCFBF1,stroke:#0D9488,color:#134E4A,stroke-width:2px
 
-    Browser ~~~ Worker
-    Browser <-->|Yjs over WebSocket| CRDT
-    Browser <-->|HTTP / JSON| API
-    Browser <-->|Socket.IO events| Socket
-
-    Worker -->|Revision-checked writes| Mongo
-    CRDT <-->|HTML and encoded Yjs state| Mongo
-    API -->|Read and write| Mongo
-
-    Worker -.->|Read delayed jobs| Redis
-    API -->|Draft operations| Redis
-    Socket <-->|Presence and cross-instance events| Redis
-    Socket -.->|Optional HTML draft updates| Redis
-
-    classDef browser fill:#404040,stroke:#818cf8,stroke-width:1px,color:#ffffff
-    classDef service fill:#3d4545,stroke:#0891b2,stroke-width:1px,color:#ffffff
-    classDef worker fill:#45403b,stroke:#ea580c,stroke-width:1px,color:#ffffff
-    classDef database fill:#3b473c,stroke:#16a34a,stroke-width:1px,color:#ffffff
-
-    class Browser browser
-    class CRDT,API,Socket service
+    class User browser
+    class Frontend frontend
+    class Proxy proxy
+    class API api
+    class CRDT crdt
+    class Redis redis
     class Worker worker
-    class Mongo,Redis database
-
-    style Services fill:#303030,stroke:#303030,color:#ffffff
-    style APIProcess fill:#303030,stroke:#454545,color:#ffffff
+    class Mongo mongo
 ```
+
+The editor uses **Hocuspocus/Yjs for live text collaboration**. Socket.IO handles **online presence and document notifications**. Pressing Save confirms the current Yjs state is persisted, then creates a checkpoint in version history through the API.
+
+The editor uses **Hocuspocus/Yjs for live text collaboration**. Socket.IO handles **online presence and document notifications**. Pressing Save confirms the current Yjs state is persisted, then creates a checkpoint in version history through the API.
 
 The editor sends live content changes through **Yjs and Hocuspocus**. **Socket.IO** carries presence, restoration, and permission-change events. The dotted path represents the additional Socket.IO HTML draft pipeline; the current editor uses Hocuspocus for content synchronization and persistence.
 
